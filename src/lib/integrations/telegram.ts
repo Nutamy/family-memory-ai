@@ -21,16 +21,26 @@ export function telegramConfig() {
   return token && chatId ? { token, chatId } : null;
 }
 
+type TelegramResponse = { ok?: boolean; description?: string; parameters?: { retry_after?: number } };
+
 async function call(token: string, method: string, body: FormData | Record<string, unknown>) {
   const isForm = body instanceof FormData;
-  const res = await fetch(`${API}/bot${token}/${method}`, {
-    method: "POST",
-    headers: isForm ? undefined : { "Content-Type": "application/json" },
-    body: isForm ? body : JSON.stringify(body),
-  });
-  const json = (await res.json().catch(() => null)) as { ok?: boolean; description?: string } | null;
-  if (!res.ok || !json?.ok) throw new Error(`Telegram: ${json?.description ?? res.status}`);
-  return json;
+  // Multi-part deliveries hit the per-chat flood limit; Telegram answers 429 with retry_after.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${API}/bot${token}/${method}`, {
+      method: "POST",
+      headers: isForm ? undefined : { "Content-Type": "application/json" },
+      body: isForm ? body : JSON.stringify(body),
+    });
+    const json = (await res.json().catch(() => null)) as TelegramResponse | null;
+    const wait = json?.parameters?.retry_after;
+    if (res.status === 429 && wait && attempt < 3) {
+      await new Promise((r) => setTimeout(r, Math.min(wait, 60) * 1000));
+      continue;
+    }
+    if (!res.ok || !json?.ok) throw new Error(`Telegram: ${json?.description ?? res.status}`);
+    return json;
+  }
 }
 
 export class TelegramClient {
@@ -58,6 +68,7 @@ export class TelegramClient {
 
   async sendDocument(data: Uint8Array, filename: string, caption?: string) {
     if (data.byteLength > TELEGRAM_MAX_FILE_BYTES) {
+      // Callers split large payloads first (see src/lib/telegram-delivery.ts).
       throw new Error(`Файл ${filename} больше 50 МБ — Telegram не примет его от бота`);
     }
     const form = new FormData();

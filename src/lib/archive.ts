@@ -32,8 +32,8 @@ export async function buildArchiveZip(bundle: PersonBundle, opts: { full: boolea
         // Missing file on disk — keep exporting the rest.
       }
     }
-    if (v.transcription.trim()) zip.file(`transcripts/${String(i + 1).padStart(3, "0")}-${slugifyFile(v.title)}.txt`, v.transcription);
-    meta.push({ title: v.title, topic: v.topic, duration: formatDuration(v.duration), seconds: v.duration, sampleRate: v.sampleRate, files });
+    if (v.transcription.trim()) zip.file(transcriptFileName(v, i), v.transcription);
+    meta.push(recordMeta(v, files));
   }
   zip.file("audio/metadata.json", JSON.stringify(meta, null, 2));
 
@@ -47,6 +47,15 @@ export async function buildArchiveZip(bundle: PersonBundle, opts: { full: boolea
     }
   }
   return zip.generateAsync({ type: "uint8array", compression: "DEFLATE", compressionOptions: { level: 4 } });
+}
+
+type Voice = PersonBundle["voiceRecords"][number];
+
+export const transcriptFileName = (v: Voice, i: number) => `transcripts/${String(i + 1).padStart(3, "0")}-${slugifyFile(v.title)}.txt`;
+
+/** Entry of audio/metadata.json; `files` maps format to its path (or delivery info). */
+export function recordMeta(v: Voice, files: Record<string, unknown>) {
+  return { title: v.title, topic: v.topic, duration: formatDuration(v.duration), seconds: v.duration, sampleRate: v.sampleRate, files };
 }
 
 export function archiveBaseName(bundle: PersonBundle) {

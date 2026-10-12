@@ -1,0 +1,29 @@
+// Cloudflare Workers config for the OpenNext build. Step-by-step setup: docs/cloudflare.md
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "family-memory-ai",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+
+  // Paste the database_id printed by `npx wrangler d1 create family-memory-db`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "family-memory-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "prisma/migrations-d1"
+    }
+  ],
+  // Private bucket for audio and photos: files are served only through authorized API routes.
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "family-memory-files" }],
+
+  // Non-secret settings. Secrets (AUTH_SECRET, TELEGRAM_BOT_TOKEN, ...) go through `wrangler secret put`.
+  "vars": {
+    "STORAGE_DRIVER": "r2",
+    "TELEGRAM_PART_MB": "20",
+    "VOICE_MAX_MB": "90"
+  }
+}

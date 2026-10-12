@@ -1,0 +1,9 @@
+# Local secrets for `npm run cf:preview` / `npm run dev:cf` (copy to .dev.vars).
+# In production set each one with: npx wrangler secret put <NAME>
+AUTH_SECRET="generate: openssl rand -base64 48"
+NEXTJS_ENV="development"
+# TELEGRAM_BOT_TOKEN=""
+# TELEGRAM_CHAT_ID=""
+# TURNSTILE_SITE_KEY=""     # Turnstile test keys: 1x00000000000000000000AA
+# TURNSTILE_SECRET_KEY=""   #                      1x0000000000000000000000000000000AA
+# OPENAI_API_KEY=""

@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { archiveBaseName, buildArchiveZip } from "@/lib/archive";
+import { archiveBaseName } from "@/lib/archive";
 import { assertPersonAccess, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { loadPersonBundle } from "@/lib/data";
 import { buildProfileJson } from "@/lib/export";
 import { escapeHtml, getTelegramClient } from "@/lib/integrations/telegram";
 import { buildReport, type PersonalityReport } from "@/lib/report";
+import { rateLimit } from "@/lib/security/rate-limit";
+import { sendAudioInParts } from "@/lib/telegram-delivery";
 import { formatMinutes } from "@/lib/utils";
 
 const schema = z.object({
-  items: z.array(z.enum(["report", "json", "audio"])).min(1).default(["report", "json"]),
+  items: z.array(z.enum(["report", "json", "audio", "wav"])).min(1).default(["report", "json"]),
 });
 
 function reportMessage(r: PersonalityReport, progress: number) {
@@ -29,9 +31,14 @@ function reportMessage(r: PersonalityReport, progress: number) {
   return lines.join("\n");
 }
 
-/** Sends the report text, profile.json and/or an MP3 archive to the configured Telegram chat. */
+/**
+ * Sends the report text, profile.json and audio (MP3 and/or WAV) to the configured chat.
+ * Audio is split into parts under the 50 MB bot limit.
+ */
 export const POST = route<{ id: string }>(async (req, { id }) => {
-  await assertPersonAccess(id);
+  const person = await assertPersonAccess(id);
+  // Each call can push hundreds of MB to Telegram — cap it per account.
+  await rateLimit(`tg:${person.userId}`, { limit: 5, windowSec: 600 });
   const tg = getTelegramClient();
   if (!tg) throw new HttpError(501, "Telegram не настроен: задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID");
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
@@ -42,6 +49,7 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
   const profile = buildProfileJson(bundle);
   const base = archiveBaseName(bundle);
   const sent: string[] = [];
+  let documents = 0;
 
   try {
     if (items.has("report")) {
@@ -54,17 +62,17 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
     if (items.has("json")) {
       await tg.sendDocument(new TextEncoder().encode(JSON.stringify(profile, null, 2)), `${base}-profile.json`, "Профиль: все ответы, тесты и воспоминания");
       sent.push("json");
+      documents++;
     }
-    if (items.has("audio")) {
+    const formats = (["mp3", "wav"] as const).filter((f) => items.has(f === "mp3" ? "audio" : "wav"));
+    if (formats.length) {
       if (!bundle.voiceRecords.length) throw new HttpError(400, "Нет аудиозаписей для отправки");
-      // MP3 only: WAV quickly exceeds the 50 MB bot upload limit.
-      const zip = await buildArchiveZip(bundle, { full: false, formats: ["mp3"] });
-      await tg.sendDocument(zip, `${base}-audio-mp3.zip`, `Аудиозаписи: ${bundle.voiceRecords.length} шт.`);
-      sent.push("audio");
+      documents += await sendAudioInParts(tg, bundle, [...formats]);
+      sent.push(...formats.map((f) => (f === "mp3" ? "audio" : "wav")));
     }
   } catch (e) {
     if (e instanceof HttpError) throw e;
     throw new HttpError(502, e instanceof Error ? e.message : "Ошибка отправки в Telegram");
   }
-  return NextResponse.json({ ok: true, sent });
+  return NextResponse.json({ ok: true, sent, documents });
 });
