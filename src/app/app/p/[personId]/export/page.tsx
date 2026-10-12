@@ -85,7 +85,7 @@ export default async function ExportPage({ params }: { params: Promise<{ personI
       <Card>
         <CardHeader>
           <CardTitle>Отправить в Telegram</CardTitle>
-          <CardDescription>Результаты придут в чат с вашим ботом. У ботов лимит 50 МБ на файл, поэтому аудио приходит несколькими ZIP-частями.</CardDescription>
+          <CardDescription>Результаты придут в чат с вашим ботом. Каждая запись приходит отдельным файлом; записи больше 50 МБ (лимит ботов) — кусками.</CardDescription>
         </CardHeader>
         <CardContent>
           <TelegramSend personId={personId} configured={integrations.telegram} />

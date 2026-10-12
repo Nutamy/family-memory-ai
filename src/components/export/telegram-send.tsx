@@ -20,13 +20,26 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState(0);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   async function send() {
     setState("sending");
     setError(null);
     try {
-      const res = await api<{ documents: number }>(`/api/persons/${personId}/telegram`, { method: "POST", json: { items } });
-      setDocuments(res.documents);
+      // The server sends audio a few files per request (Workers limits); keep asking until done.
+      let cursor: number | null = 0;
+      let sent = 0;
+      setProgress(null);
+      while (cursor !== null) {
+        const res: { documents: number; next: number | null; total: number } = await api(`/api/persons/${personId}/telegram`, {
+          method: "POST",
+          json: { items, cursor },
+        });
+        sent += res.documents;
+        setDocuments(sent);
+        if (res.total) setProgress({ done: res.next ?? res.total, total: res.total });
+        cursor = res.next;
+      }
       setState("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка");
@@ -74,7 +87,9 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
           </span>
         )}
         {state === "sending" && items.some((i) => i === "audio" || i === "wav") && (
-          <span className="text-sm text-muted-foreground">Аудио уходит частями до 50 МБ — это может занять несколько минут</span>
+          <span className="text-sm text-muted-foreground">
+            {progress ? `Аудио: ${progress.done} из ${progress.total}` : "Готовлю аудио"} — файлы уходят по одному, это может занять несколько минут
+          </span>
         )}
         {error && <span className="text-sm font-semibold text-primary">{error}</span>}
       </div>

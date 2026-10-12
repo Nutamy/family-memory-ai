@@ -1,7 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ACCESS_COOKIE, accessTokenFrom, isAccessMode, verifyAccessToken } from "@/lib/access";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export async function middleware(req: NextRequest) {
+  if (isAccessMode()) {
+    // Access already stopped strangers at the edge; this catches a hostname left unprotected.
+    const identity = await verifyAccessToken(accessTokenFrom(req.headers, req.cookies.get(ACCESS_COOKIE)?.value));
+    if (identity) return NextResponse.next();
+    return new NextResponse("Нет доступа. Откройте сайт по адресу, защищённому Cloudflare Access.", {
+      status: 403,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value);
   if (session) return NextResponse.next();
 

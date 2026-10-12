@@ -11,6 +11,8 @@ const perRequest = new WeakMap<object, PrismaClient>();
 
 function client(): PrismaClient {
   const cf = cloudflareContext();
+  // On Workers there is no SQLite file to fall back to: name the misconfiguration instead.
+  if (cf && !cf.env.DB) throw new Error("D1 binding DB is missing: check d1_databases in wrangler.jsonc");
   if (cf?.env.DB) {
     let c = perRequest.get(cf.ctx);
     if (!c) {

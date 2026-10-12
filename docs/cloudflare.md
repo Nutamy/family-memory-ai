@@ -1,35 +1,34 @@
-# Развёртывание на Cloudflare: Workers + D1 + R2
+# Развёртывание на Cloudflare (бесплатный тариф): Workers + D1 + R2 + Access
 
 Приложение собирается адаптером [OpenNext](https://opennext.js.org/cloudflare) и работает как **Cloudflare Worker**:
 
-| Что | Где на Cloudflare | Привязка (binding) |
+| Что | Где на Cloudflare | Бесплатно |
 | --- | --- | --- |
-| Next.js (страницы и API) | Workers | — |
-| База данных (Prisma, SQLite-схема) | D1 | `DB` |
-| Аудио и фото | R2, приватный бакет | `BUCKET` |
-| Защита форм от ботов (по желанию) | Turnstile | — |
+| Сайт и API (Next.js) | Workers | 100 000 запросов в день |
+| База данных | D1, привязка `DB` | 5 ГБ |
+| Аудио и фото | R2, привязка `BUCKET`, приватный бакет | 10 ГБ |
+| Вход для семьи | Cloudflare Access (Zero Trust) | до 50 человек |
 
-Код сам понимает, где запущен: на Workers берёт D1 и R2, на обычном Node-сервере (`npm run dev` / `npm start`) — SQLite-файл и папку `storage/`.
+**Как устроен вход.** Паролей в приложении нет. Перед сайтом стоит Cloudflare Access: человек вводит email, получает на почту одноразовый код и попадает на сайт, только если его email есть в вашем списке. Посторонний не увидит даже первую страницу. Приложение проверяет подпись Cloudflare в каждом запросе и по email понимает, кто пришёл. У каждого члена семьи свои архивы.
+
+Код сам понимает, где запущен: на Workers берёт D1 и R2, на обычном Node-сервере (`npm run dev`) — SQLite-файл, папку `storage/` и вход по паролю.
 
 ---
 
 ## 0. Почему `family-memory-ai.pages.dev` отвечает 404
 
-`*.pages.dev` — адрес **Cloudflare Pages**. Pages раздаёт статику, а этому приложению нужен сервер (вход, база, загрузка аудио). Проект Pages собрал пустую папку, поэтому 404.
+`*.pages.dev` — адрес **Cloudflare Pages**, а Pages раздаёт только статику. Этому приложению нужен сервер, поэтому проект Pages собрал пустую папку.
 
-Что сделать:
-
-1. В панели **Workers & Pages** откройте проект `family-memory-ai` типа Pages → **Settings** → внизу **Delete project** (или просто не используйте его).
-2. Разверните приложение как **Worker** по шагам ниже. Адрес будет таким: `https://family-memory-ai.<ваш-субдомен>.workers.dev`. Субдомен виден в **Workers & Pages → Overview** справа (`Subdomain`).
-3. Для автодеплоя из GitHub подключайте репозиторий через **Create → Workers → Import a repository**, а не через вкладку Pages (шаг 10).
+1. **Workers & Pages** → проект `family-memory-ai` типа Pages → **Settings** → внизу **Delete project**.
+2. Разверните приложение как **Worker** по шагам ниже. Адрес будет `https://family-memory-ai.<ваш-субдомен>.workers.dev`. Субдомен виден в **Workers & Pages → Overview** справа.
+3. Автодеплой из GitHub подключается через **Create → Workers → Import a repository**, а не через Pages (шаг 11).
 
 ---
 
 ## 1. Что понадобится
 
-- Аккаунт Cloudflare.
-- **Тариф Workers Paid (5 $/мес) — нужен на практике.** На бесплатном тарифе у запроса всего 10 мс процессорного времени, а проверка пароля (bcrypt) и сборка ZIP для Telegram занимают больше: вход будет падать с ошибкой `Exceeded CPU limit`. Подключается в **Workers & Pages → Plans**.
-- Карта в аккаунте, чтобы включить R2 (до 10 ГБ бесплатно).
+- Аккаунт Cloudflare на бесплатном тарифе.
+- Карта в аккаунте. Её просят R2 и Zero Trust даже на бесплатных тарифах, но без превышения бесплатных лимитов ничего не списывают.
 - Node.js 20+ и клон репозитория с выполненным `npm install`.
 
 ## 2. Вход в Cloudflare из терминала
@@ -45,7 +44,7 @@ npx wrangler whoami     # проверка: покажет email и Account ID
 npx wrangler d1 create family-memory-db --location weur
 ```
 
-`--location weur` размещает базу в Западной Европе. Есть и другие регионы: `eeur` (Восточная Европа), `apac` (Азия) и т. д. Команда выведет блок с `database_id`. Вставьте его в `wrangler.jsonc` вместо нулей:
+`--location weur` — Западная Европа (есть `eeur`, `apac` и др.). Команда выведет `database_id`. Вставьте его в `wrangler.jsonc` вместо нулей:
 
 ```jsonc
 "d1_databases": [
@@ -58,7 +57,7 @@ npx wrangler d1 create family-memory-db --location weur
 ]
 ```
 
-`database_id` не секрет: без вашего API-токена по нему ничего не сделать. Его можно коммитить.
+`database_id` не секрет: без вашего доступа к аккаунту по нему ничего не сделать. Его можно коммитить.
 
 ## 4. Создать таблицы и залить каталог вопросов
 
@@ -73,20 +72,20 @@ npm run d1:seed:remote      # 86 вопросов анкеты (без демо-
 npx wrangler d1 execute DB --remote --command "SELECT count(*) FROM Question"
 ```
 
-> Демо-аккаунт `demo@family.ai / demo1234` в боевую базу **намеренно не попадает**: у него публично известный пароль.
-
 ## 5. Создать бакет R2
 
-1. В панели: **R2 Object Storage → Purchase R2 / Enable** (один раз, нужна карта).
+1. В панели: **R2 Object Storage → Enable / Purchase R2** (один раз; тариф бесплатный, но нужна карта).
 2. В терминале:
 
 ```bash
 npx wrangler r2 bucket create family-memory-files
 ```
 
-Бакет должен оставаться **приватным**: в **R2 → family-memory-files → Settings** опции `Public access` и `r2.dev subdomain` не включайте. Файлы отдаются только через API приложения после проверки, что запись принадлежит вошедшему пользователю.
+Бакет должен оставаться **приватным**: в **R2 → family-memory-files → Settings** не включайте `Public access` и `r2.dev subdomain`. Файлы отдаются только через приложение после проверки владельца.
 
 ## 6. Проверить сборку локально
+
+Локально Access не нужен: без настроек `CF_ACCESS_*` приложение работает в режиме входа по паролю.
 
 ```bash
 cp .dev.vars.example .dev.vars   # впишите AUTH_SECRET (любая длинная строка)
@@ -97,70 +96,67 @@ npm run cf:preview               # сборка OpenNext и запуск в work
 
 Откройте http://localhost:8787, зарегистрируйтесь, создайте профиль, запишите голос. Локальные D1 и R2 живут в `.wrangler/state` и с боевыми не связаны.
 
-Для разработки с горячей перезагрузкой на тех же локальных D1/R2: `npm run dev:cf`. Обычный `npm run dev` работает на SQLite, как раньше.
-
 ## 7. Первый деплой
 
 ```bash
 npm run cf:deploy
 ```
 
-В конце будет адрес `https://family-memory-ai.<субдомен>.workers.dev`. Пока секреты не заданы, вход не работает: это следующий шаг.
+В конце появится адрес `https://family-memory-ai.<субдомен>.workers.dev`. **Пока Access не включён, сайт открыт всем — сразу переходите к шагу 8.**
 
-## 8. Секреты
+## 8. Включить Cloudflare Access (вход по коду из письма)
 
-Секреты хранятся зашифрованными в Cloudflare и **никогда не пишутся** в `wrangler.jsonc` или в git.
-
-```bash
-# Ключ подписи сессий. Если его сменить, все пользователи разлогинятся.
-openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
-
-# Telegram (см. раздел «Telegram-бот» в README)
-npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put TELEGRAM_CHAT_ID
-
-# По желанию
-npx wrangler secret put OPENAI_API_KEY
-```
-
-Проверка: `npx wrangler secret list`. Секреты применяются сразу, повторный деплой не нужен.
-
-## 9. Защита форм: Cloudflare Turnstile (рекомендуется)
-
-Turnstile — невидимая капча Cloudflare на входе и регистрации. Без ключей формы защищены honeypot-полем и лимитом попыток, с ключами добавляется проверка «не робот».
-
-1. Панель: **Turnstile → Add widget**. Имя любое; в **Hostnames** укажите `family-memory-ai.<субдомен>.workers.dev` и свой домен, если есть. Режим **Managed**.
-2. Скопируйте **Site Key** и **Secret Key**.
-3. Site Key публичный, его можно положить в `vars` в `wrangler.jsonc`:
+1. **Workers & Pages → family-memory-ai → Settings → Domains & Routes**. В строке `workers.dev` нажмите **Enable Cloudflare Access**. Если Zero Trust ещё не подключён, Cloudflare попросит выбрать название команды (*team name*, например `ourfamily`) и тариф — выберите **Free**.
+2. Нажмите **Manage Cloudflare Access**. Откроется политика доступа: в правиле **Include → Emails** перечислите адреса членов семьи (свой — обязательно).
+3. Скопируйте два значения:
+   - **Team domain** — `ourfamily.cloudflareaccess.com` (Zero Trust → **Settings → Team name and domain**);
+   - **Application Audience (AUD) Tag** — Zero Trust → **Access → Applications** → приложение вашего Worker'а → **Overview / Additional settings**.
+4. Впишите их в `wrangler.jsonc`. Оба значения не секретные:
 
    ```jsonc
-   "vars": { "TURNSTILE_SITE_KEY": "0x4AAAA...", ... }
+   "CF_ACCESS_TEAM_DOMAIN": "ourfamily.cloudflareaccess.com",
+   "CF_ACCESS_AUD": "4714c1358e65fe4b408ad6d432a5f878f08194bdb4752441fd56faefa9b2b6f2",
    ```
 
-   Secret Key задайте секретом:
+5. `npm run cf:deploy`.
+6. Проверка: откройте сайт в окне инкогнито. Появится страница Cloudflare «Get a login code»: введите email из списка, затем код из письма. Email не из списка код не получит.
 
-   ```bash
-   npx wrangler secret put TURNSTILE_SECRET_KEY
-   ```
+Пароли в приложении в этом режиме выключены: `/login` и `/register` сразу ведут в архив. Кнопка «Выйти» завершает сессию Access.
 
-4. `npm run cf:deploy`. Виджет появится на `/login` и `/register`.
+**Добавить или убрать человека:** Zero Trust → **Access → Policies** → политика приложения → список Emails. Деплой не нужен.
 
-Для локальной проверки подойдут тестовые ключи из `.dev.vars.example` (проверка всегда проходит).
+> Свой домен (шаг 12) защищается отдельно: Zero Trust → **Access → Applications → Add an application → Self-hosted**, домен `memory.example.com`, та же политика. AUD у этого приложения будет другим — используйте его. Даже если домен забудут защитить, приложение без подписи Access ответит 403.
 
-## 10. Автодеплой из GitHub (по желанию)
+## 9. Telegram
 
-1. **Workers & Pages → Create → Workers → Import a repository** → выберите `family-memory-ai`.
-2. Настройки сборки:
-   - Build command: `npx opennextjs-cloudflare build`
-   - Deploy command: `npx opennextjs-cloudflare deploy`
-   - Имя Worker'а должно совпадать с `name` в `wrangler.jsonc` (`family-memory-ai`).
-3. После этого каждый push в основную ветку деплоится сам. Миграции базы автоматически не применяются: после изменения схемы запускайте `npm run d1:migrate:remote` вручную (шаг 12).
+```bash
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+npx wrangler secret put TELEGRAM_CHAT_ID
+```
 
-## 11. Свой домен
+Как получить токен и chat id — в разделе «Telegram-бот» в README. Секреты применяются сразу, повторный деплой не нужен. Проверка: `npx wrangler secret list`.
 
-**Workers & Pages → family-memory-ai → Settings → Domains & Routes → Add → Custom domain**, например `memory.example.com`. Домен должен быть подключён к Cloudflare. Сертификат выпустится автоматически. Добавьте домен в hostnames виджета Turnstile.
+## 10. Проверить, что бесплатного тарифа хватает
 
-## 12. Изменение схемы базы
+На бесплатном тарифе у одного запроса 10 мс процессорного времени. Приложение под это подстроено: нет хэширования паролей, аудио в Telegram уходит без упаковки, по 5 файлов за запрос. Но насколько быстро в бою отрабатывают страницы и запросы к базе, проверить можно только на месте:
+
+1. **Workers & Pages → family-memory-ai → Observability (Logs)**. Пройдите по всем разделам сайта, запишите голос, отправьте результаты в Telegram.
+2. Поищите в логах `Exceeded CPU Limit` или ответы `1102`.
+   - Ничего нет — всё в порядке.
+   - Ошибки бывают изредка — Cloudflare допускает небольшие разовые превышения, так что можно жить.
+   - Ошибки регулярные — подключите Workers Paid (5 $/мес) в **Workers & Pages → Plans**. Код менять не нужно.
+
+## 11. Автодеплой из GitHub (по желанию)
+
+1. **Workers & Pages → Create → Workers → Import a repository** → `family-memory-ai`.
+2. Build command: `npx opennextjs-cloudflare build`; Deploy command: `npx opennextjs-cloudflare deploy`. Имя Worker'а — `family-memory-ai`, как в `wrangler.jsonc`.
+3. Каждый push в основную ветку будет деплоиться сам. Миграции базы так не применяются: после изменения схемы запускайте `npm run d1:migrate:remote` вручную (шаг 13).
+
+## 12. Свой домен (по желанию)
+
+**Workers & Pages → family-memory-ai → Settings → Domains & Routes → Add → Custom domain**, например `memory.example.com`. Домен должен быть подключён к Cloudflare, сертификат выпустится сам. Не забудьте защитить его через Access (примечание к шагу 8).
+
+## 13. Изменение схемы базы
 
 1. Поменяйте `prisma/schema.prisma`.
 2. Создайте миграцию:
@@ -171,70 +167,69 @@ Turnstile — невидимая капча Cloudflare на входе и рег
      > prisma/migrations-d1/000N_add_something.sql
    ```
 
-3. Проверьте локально (`npm run d1:migrate`, `npm run cf:preview`), затем примените к боевой базе: `npm run d1:migrate:remote`, и задеплойте.
+3. Проверьте локально (`npm run d1:migrate`, `npm run cf:preview`), затем: `npm run d1:migrate:remote` и деплой.
 
 ---
 
-## Безопасность базы данных и форм
+## Безопасность
 
 ### Что сделано в коде
 
 | Угроза | Защита | Где |
 | --- | --- | --- |
-| Подбор пароля, перебор email | Лимит: 20 попыток входа с IP и 8 на email за 15 мин, 5 регистраций с IP в час. Счётчики лежат в D1 (таблица `RateLimit`, ключи — SHA-256), поэтому действуют во всех копиях Worker'а | `src/lib/security/rate-limit.ts`, `api/auth/*` |
-| Определение зарегистрированных email по времени ответа | Для несуществующего email всё равно выполняется bcrypt-сравнение | `api/auth/login` |
-| Боты на формах | Honeypot-поле `website` и Cloudflare Turnstile (если заданы ключи) | `src/lib/security/form-guard.ts`, `auth-form.tsx` |
-| CSRF | Cookie `SameSite=Lax` + `httpOnly` + `Secure`; все изменяющие API-запросы проверяют `Origin` и `Sec-Fetch-Site` | `src/lib/security/origin.ts`, `src/lib/api.ts` |
-| Слабые пароли | Минимум 8 символов, максимум 72 байта (дальше bcrypt их игнорирует) | `api/auth/register` |
-| SQL-инъекции | Только Prisma с параметризованными запросами, сырого SQL в коде нет | — |
-| Доступ к чужим данным | Каждый API-запрос проверяет, что профиль принадлежит пользователю из сессии | `assertPersonAccess` |
-| Подмена файлов (HTML вместо WAV и т. п.) | Тип определяется по первым байтам, а не по имени и `Content-Type` от браузера; лимиты размера | `src/lib/security/file-signature.ts` |
-| XSS, кликджекинг | CSP, `X-Frame-Options: DENY`, `nosniff`, HSTS, `Permissions-Policy` (микрофон только для самого сайта) | `next.config.ts` |
-| Расходы на внешние API | Лимиты: отправка в Telegram 5 раз за 10 мин, расшифровка 30 раз в час, загрузка 200 записей в час | соответствующие маршруты |
-| Утечка файлов | R2 приватный, файлы отдаются только через API после проверки владельца | `src/lib/storage/r2.ts` |
+| Посторонние на сайте | Cloudflare Access пускает только emails из списка. Приложение дополнительно проверяет подпись токена Access (ключи Cloudflare, issuer, AUD, срок действия) в каждом запросе, поэтому подделка или обход незащищённого адреса дают 403 | `src/lib/access.ts`, `src/middleware.ts`, `src/lib/auth.ts` |
+| Доступ к чужим архивам | Каждый API-запрос проверяет, что профиль принадлежит вошедшему пользователю | `assertPersonAccess` |
+| CSRF | Изменяющие запросы проверяют `Origin` и `Sec-Fetch-Site` | `src/lib/security/origin.ts` |
+| SQL-инъекции | Только Prisma с параметризованными запросами, сырого SQL нет | — |
+| Подмена файлов (HTML вместо WAV и т. п.) | Тип определяется по первым байтам файла, есть лимиты размера | `src/lib/security/file-signature.ts` |
+| XSS, кликджекинг | CSP, `X-Frame-Options: DENY`, `nosniff`, HSTS, `Permissions-Policy` | `next.config.ts` |
+| Расходы и злоупотребления | Лимиты: новая отправка в Telegram 5 раз за 10 мин, расшифровка 30 раз в час, загрузка 200 записей в час (счётчики в D1) | `src/lib/security/rate-limit.ts` |
+| Утечка файлов | R2 приватный, файлы отдаются только через API | `src/lib/storage/r2.ts` |
 
-### Что включить в панели Cloudflare
+Режим входа по паролю (локальная разработка или Node-хостинг) дополнительно защищён лимитом попыток, honeypot-полем, Cloudflare Turnstile (ключи `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`) и bcrypt.
 
-1. **Security → WAF → Rate limiting rules → Create rule** (одно правило есть и на бесплатном тарифе): `URI Path` `starts with` `/api/auth/`, `10` запросов за `10 seconds` с одного IP → **Block** на `10 seconds`. Это первый рубеж перед кодовым лимитом.
-2. **Security → Bots → Bot Fight Mode: On.**
-3. **SSL/TLS → Edge Certificates**: `Always Use HTTPS: On`, `Minimum TLS Version: 1.2`.
-4. **API-токены** (**My Profile → API Tokens**): для CI создавайте токен по шаблону *Edit Cloudflare Workers* с доступом только к своему аккаунту. Global API Key нигде не используйте.
-5. **Двухфакторная аутентификация** на аккаунте Cloudflare (**My Profile → Authentication**): у кого доступ к аккаунту, у того доступ к базе.
+### Что включить в панели
+
+1. **Двухфакторная аутентификация** на аккаунте Cloudflare (**My Profile → Authentication**). Кто управляет аккаунтом, тот управляет и базой, и списком допуска.
+2. **Zero Trust → Settings → Authentication → Global session timeout**: например, 1 месяц, чтобы родственникам не вводить код каждый день. Слишком долгий срок не ставьте.
+3. **SSL/TLS → Edge Certificates** (если есть свой домен): `Always Use HTTPS: On`, `Minimum TLS Version: 1.2`.
+4. **API-токены** для CI: шаблон *Edit Cloudflare Workers*, только ваш аккаунт. Global API Key нигде не используйте.
 
 ### Почему D1 нельзя «взломать снаружи»
 
-У D1 нет публичного адреса и пароля, как у PostgreSQL: обратиться к ней можно только из Worker'а через привязку `DB` или через API Cloudflare с вашим токеном. Поэтому главное — беречь токены, `wrangler login` и `.dev.vars` (он в `.gitignore`).
+У D1 нет публичного адреса и пароля, как у PostgreSQL. Обратиться к ней можно только из Worker'а через привязку `DB` или через API Cloudflare с вашим токеном. Поэтому главное — беречь доступ к аккаунту, `wrangler login` и `.dev.vars` (он в `.gitignore`).
 
 ### Резервные копии
 
-- **Time Travel** включён у D1 всегда: откат на любую минуту за последние 30 дней (на Free — 7 дней):
+- **Time Travel** у D1 включён всегда: откат на любую минуту за последние 7 дней (на Paid — 30):
 
   ```bash
   npx wrangler d1 time-travel info DB
   npx wrangler d1 time-travel restore DB --timestamp "2026-10-12T10:00:00Z"
   ```
 
-- Полный дамп в файл (храните в надёжном месте, в нём личные данные):
+- Полный дамп в файл (храните надёжно: там личные данные):
 
   ```bash
   npx wrangler d1 export DB --remote --output backup-$(date +%F).sql
   ```
 
-- Для R2 включите **Object lifecycle / Bucket locks** по необходимости или периодически копируйте бакет через `rclone`.
+- Аудио дублируется в Telegram при отправке. Это тоже резервная копия.
 
 ---
 
-## Ограничения Workers и настройки под них
+## Ограничения бесплатного тарифа
 
-| Ограничение | Значение | Что сделано |
+| Ограничение | Значение | Что сделано / что учесть |
 | --- | --- | --- |
-| Размер тела запроса | 100 МБ (Free и Pro) | `VOICE_MAX_MB=90` в `wrangler.jsonc`: около 15 мин WAV 48 кГц моно в одной записи |
-| Память Worker'а | 128 МБ | Telegram-части по `TELEGRAM_PART_MB=20` МБ; аудио отдаётся по диапазонам (Range) из R2 |
-| Процессорное время | Free: 10 мс; Paid: по умолчанию 30 с, максимум 5 мин | При долгой отправке большого архива в Telegram добавьте в `wrangler.jsonc` `"limits": { "cpu_ms": 300000 }` (только на Paid) |
-| Внешние запросы (subrequests) | Free: 50 за вызов, на Paid намного больше | Каждая часть для Telegram — один запрос |
-| Размер сборки | Free: 3 МБ (gzip), Paid: 10 МБ | Сейчас ~2,5 МБ |
+| Процессорное время | 10 мс на запрос | Нет хэширования паролей; аудио в Telegram — без ZIP. См. шаг 10 |
+| Внешние запросы | 50 на запрос | Telegram: 5 файлов за запрос, страница сама повторяет запросы, пока всё не уйдёт |
+| Размер тела запроса | 100 МБ | `VOICE_MAX_MB=90`: около 15 мин WAV 48 кГц моно в одной записи |
+| Память | 128 МБ | Большие файлы в Telegram — кусками по 30 МБ; аудио на сайте отдаётся по диапазонам (Range) |
+| Запросов в день | 100 000 | Для семейного архива с запасом |
+| Размер сборки | 3 МБ (gzip) | Сейчас ~2,5 МБ |
 
-Скачивание полного ZIP-архива (`/api/.../export/zip`) собирается в памяти. На Workers архив больше ~100 МБ упрётся в лимит памяти. Для больших архивов используйте отправку в Telegram частями или локальный запуск.
+**Скачивание ZIP-архивов** на экране «Экспорт и ИИ» на бесплатном тарифе, скорее всего, будет падать: сборка ZIP занимает сотни миллисекунд процессора. Используйте отправку в Telegram — каждая запись приходит отдельным файлом. Отдельные записи по-прежнему скачиваются с экрана «Голосовой архив». Если ZIP нужен, подключите Workers Paid.
 
 ## Шпаргалка команд
 

@@ -1,19 +1,40 @@
-// Server-side auth helpers. MVP: email + password (bcrypt).
+// Server-side auth helpers. Two modes:
+// - Cloudflare Access (src/lib/access.ts): identity comes from the signed Access JWT;
+// - email + password (bcrypt) with our own session cookie — local development and Node hosting.
 // OAuth providers (Google, Microsoft, Apple) plug in via User.provider/providerId:
 // add a callback route that upserts the User and calls createSessionToken — the rest
 // of the app only relies on the session cookie.
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
+import { cache } from "react";
+import { ACCESS_COOKIE, accessTokenFrom, isAccessMode, verifyAccessToken } from "./access";
 import { db } from "./db";
 import { SESSION_COOKIE, verifySessionToken } from "./session";
 
-export async function getSessionUserId(): Promise<string | null> {
+/** Access users are created on first visit: Access has already confirmed the email. */
+async function userIdForAccessEmail(email: string, sub: string) {
+  const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
+  if (existing) return existing.id;
+  try {
+    return (await db.user.create({ data: { email, provider: "cloudflare-access", providerId: sub }, select: { id: true } })).id;
+  } catch {
+    // Two first requests raced on the unique email.
+    return (await db.user.findUniqueOrThrow({ where: { email }, select: { id: true } })).id;
+  }
+}
+
+// cache(): layout and page of one render share a single verification.
+export const getSessionUserId = cache(async (): Promise<string | null> => {
   const store = await cookies();
+  if (isAccessMode()) {
+    const identity = await verifyAccessToken(accessTokenFrom(await headers(), store.get(ACCESS_COOKIE)?.value));
+    return identity ? userIdForAccessEmail(identity.email, identity.sub) : null;
+  }
   const session = await verifySessionToken(store.get(SESSION_COOKIE)?.value);
   return session?.sub ?? null;
-}
+});
 
 export async function getCurrentUser() {
   const id = await getSessionUserId();
@@ -55,6 +76,7 @@ export async function assertPersonAccess(personId: string) {
 
 export function apiError(err: unknown) {
   if (err instanceof HttpError) return NextResponse.json({ error: err.message }, { status: err.status });
-  console.error(err);
+  // First line carries the cause (e.g. Prisma "no such table"), so it shows in the Workers log list.
+  console.error(err instanceof Error ? `${err.name}: ${err.message.trim()}` : err);
   return NextResponse.json({ error: "Внутренняя ошибка сервера" }, { status: 500 });
 }
