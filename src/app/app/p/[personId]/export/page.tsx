@@ -1,6 +1,7 @@
 import { AudioLines, Bot, Clapperboard, Cpu, FileArchive, FileJson, Gauge, Mic, Type } from "lucide-react";
 import { Illustration } from "@/components/decor";
 import { CopyButton } from "@/components/export/copy-button";
+import { TelegramSend } from "@/components/export/telegram-send";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +81,16 @@ export default async function ExportPage({ params }: { params: Promise<{ personI
           ))}
         </div>
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Отправить в Telegram</CardTitle>
+          <CardDescription>Результаты придут в чат с вашим ботом. Аудио отправляется в MP3 — у ботов лимит 50 МБ на файл.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TelegramSend personId={personId} configured={integrations.telegram} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
