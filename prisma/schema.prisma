@@ -1,0 +1,172 @@
+// Family Memory AI — data model.
+// SQLite for the MVP. To move to PostgreSQL change `provider` to "postgresql"
+// and point DATABASE_URL at the server; the schema avoids SQLite-only features.
+// Structured payloads (choices, test answers, results) are stored as JSON strings
+// so the same schema works on both engines.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  // Reserved for OAuth (google | microsoft | apple); "credentials" for email+password.
+  provider     String   @default("credentials")
+  providerId   String?
+  createdAt    DateTime @default(now())
+  persons      Person[]
+}
+
+model Person {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String   @default("")
+  middleName    String   @default("")
+  birthDate     String   @default("")
+  birthPlace    String   @default("")
+  residence     String   @default("")
+  education     String   @default("")
+  profession    String   @default("")
+  bio           String   @default("")
+  photoKey      String?
+  // Last opened section, used by "Продолжить заполнение".
+  lastSection   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  answers       Answer[]
+  voiceRecords  VoiceRecord[]
+  testResults   TestResult[]
+  memories      Memory[]
+  tags          Tag[]
+  favorites     FavoriteItem[]
+
+  @@index([userId])
+}
+
+model Question {
+  id        String   @id
+  category  String
+  text      String
+  hint      String   @default("")
+  // text | textarea | single_choice | multiple_choice | slider | voice_answer
+  type      String
+  // JSON: string[] for choices, { min, max, minLabel, maxLabel } for slider
+  options   String   @default("null")
+  minWords  Int      @default(0)
+  order     Int      @default(0)
+  answers   Answer[]
+  voiceRecords VoiceRecord[]
+
+  @@index([category])
+}
+
+model Answer {
+  id            String       @id @default(cuid())
+  personId      String
+  person        Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text          String       @default("")
+  // JSON: selected option(s) or slider number
+  value         String       @default("null")
+  // Primary (latest) recording for this answer.
+  voiceRecordId String?      @unique
+  voiceRecord   VoiceRecord? @relation("AnswerAudio", fields: [voiceRecordId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([personId, questionId])
+}
+
+model VoiceRecord {
+  id            String    @id @default(cuid())
+  personId      String
+  person        Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  questionId    String?
+  question      Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  memoryId      String?
+  memory        Memory?   @relation(fields: [memoryId], references: [id], onDelete: SetNull)
+  title         String
+  topic         String    @default("")
+  transcription String    @default("")
+  // Storage keys (see src/lib/storage) — local path today, S3 key tomorrow.
+  wavKey        String
+  mp3Key        String?
+  duration      Float     @default(0)
+  sampleRate    Int       @default(0)
+  sizeBytes     Int       @default(0)
+  peakDb        Float     @default(0)
+  rmsDb         Float     @default(0)
+  clipping      Float     @default(0)
+  createdAt     DateTime  @default(now())
+  answer        Answer?   @relation("AnswerAudio")
+
+  @@index([personId])
+}
+
+model TestResult {
+  id        String   @id @default(cuid())
+  personId  String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  // bigfive | mbti | temperament
+  kind      String
+  answers   String   @default("{}")
+  result    String   @default("{}")
+  completed Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, kind])
+}
+
+model Memory {
+  id           String        @id @default(cuid())
+  personId     String
+  person       Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  title        String
+  content      String        @default("")
+  period       String        @default("")
+  place        String        @default("")
+  people       String        @default("")
+  emotion      String        @default("")
+  tags         Tag[]
+  voiceRecords VoiceRecord[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([personId])
+}
+
+model Tag {
+  id       String   @id @default(cuid())
+  personId String
+  person   Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  name     String
+  color    String   @default("terracotta")
+  memories Memory[]
+
+  @@unique([personId, name])
+}
+
+model FavoriteItem {
+  id        String   @id @default(cuid())
+  personId  String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  // books | films | music | quotes | recipes | traditions
+  kind      String
+  title     String
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([personId, kind])
+}

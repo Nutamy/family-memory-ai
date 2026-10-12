@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 247 244 235;
+    --foreground: 29 49 79;
+    --card: 255 253 248;
+    --muted: 239 234 220;
+    --muted-foreground: 91 101 119;
+    --border: 228 220 202;
+    --primary: 193 92 70;
+    --gold: 217 149 67;
+    --forest: 45 75 57;
+    --grass: 94 131 87;
+    --mist: 216 229 219;
+    --grain-opacity: 0.32;
+    color-scheme: light;
+  }
+
+  .dark {
+    --background: 15 26 43;
+    --foreground: 242 237 224;
+    --card: 23 36 57;
+    --muted: 30 46 71;
+    --muted-foreground: 169 178 194;
+    --border: 44 61 89;
+    --primary: 212 107 83;
+    --gold: 226 163 74;
+    --forest: 143 181 135;
+    --grass: 127 167 122;
+    --mist: 36 60 62;
+    --grain-opacity: 0.12;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    font-feature-settings: "kern", "liga";
+  }
+
+  /* Paper grain texture over the whole page, like a printed book. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .48  0 0 0 0 .38  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  .dark body::before {
+    mix-blend-mode: screen;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    @apply font-serif tracking-tight;
+  }
+
+  ::selection {
+    background: rgb(var(--gold) / 0.35);
+  }
+
+  input[type="range"] {
+    accent-color: rgb(var(--primary));
+  }
+}
+
+@layer components {
+  .paper-card {
+    @apply relative rounded-3xl border bg-card shadow-paper;
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
