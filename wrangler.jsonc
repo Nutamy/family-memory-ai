@@ -8,12 +8,11 @@
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
 
-  // Paste the database_id printed by `npx wrangler d1 create family-memory-db`.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "family-memory-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "7fd82484-d0b9-4665-98f7-33c33e0b1eb7",
       "migrations_dir": "prisma/migrations-d1"
     }
   ],
