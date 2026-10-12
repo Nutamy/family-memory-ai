@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bird, Leaf, Logo, Sprig } from "@/components/decor";
+import { Bird, Illustration, Leaf, Logo, Sprig } from "@/components/decor";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
@@ -7,7 +7,8 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
     <main className="relative flex min-h-dvh flex-col overflow-hidden">
       <Leaf className="absolute left-4 top-28 w-16 -rotate-12 animate-float" />
       <Bird className="absolute right-6 top-20 w-24 animate-float [animation-delay:-2s]" />
-      <Sprig className="absolute -left-8 bottom-0 hidden w-36 opacity-70 sm:block" />
+      <Sprig className="absolute -left-8 bottom-0 hidden w-36 opacity-80 sm:block" />
+      <Illustration name="fox" className="absolute bottom-4 right-[4%] hidden w-44 lg:block xl:w-56" />
       <header className="container flex h-20 items-center justify-between">
         <Link href="/" aria-label="На главную">
           <Logo />

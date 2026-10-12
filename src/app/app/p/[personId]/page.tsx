@@ -1,6 +1,6 @@
 import { ArrowRight, BookHeart, Clock, MessageSquareText, UserRound } from "lucide-react";
 import Link from "next/link";
-import { Bird, Leaf } from "@/components/decor";
+import { Illustration, Leaf } from "@/components/decor";
 import { ModuleIcon } from "@/components/layout/module-icon";
 import { Button } from "@/components/ui/button";
 import { Progress, ProgressRing } from "@/components/ui/progress";
@@ -23,7 +23,9 @@ export default async function PersonOverview({ params }: { params: Promise<{ per
   return (
     <div className="space-y-10">
       <section className="relative overflow-hidden rounded-[2rem] bg-navy p-6 text-cream sm:p-10">
-        <Bird className="absolute right-4 top-4 w-24 opacity-90 sm:w-32" />
+        <Illustration name="moon" className="absolute right-6 top-6 w-10 sm:w-14" />
+        <Illustration name="star-small" className="absolute right-20 top-16 w-4 sm:right-28" />
+        <Illustration name="bear" className="absolute -bottom-2 right-[30%] hidden w-40 opacity-95 xl:block" />
         <Leaf className="absolute -bottom-4 right-1/3 w-16 rotate-45 opacity-70" />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="size-28 shrink-0 rotate-[-3deg] rounded-2xl bg-cream p-1.5 shadow-xl">

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bird, Leaf } from "@/components/decor";
+import { Bird, Illustration, Leaf } from "@/components/decor";
 import { Input } from "@/components/ui/input";
 import type { VoiceRecordDTO } from "@/lib/dto";
 import { VOICE_TOPICS } from "@/lib/questionnaire";
@@ -34,6 +34,8 @@ export function VoiceArchive({ personId, initial }: { personId: string; initial:
       <section className="relative overflow-hidden rounded-[2rem] bg-navy px-5 py-10 text-cream sm:px-10">
         <Bird className="absolute right-6 top-6 w-24 opacity-90" />
         <Leaf className="absolute -left-2 bottom-6 w-14 rotate-[-30deg] opacity-80" />
+        <Illustration name="moon" className="absolute left-6 top-6 w-10" />
+        <Illustration name="bee-trail" className="absolute bottom-10 right-4 hidden w-40 opacity-80 md:block" />
         <div className="relative mx-auto max-w-xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-honey">Говорите свободно</p>
           <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Записать воспоминание</h2>

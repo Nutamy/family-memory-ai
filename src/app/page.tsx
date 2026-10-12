@@ -1,6 +1,6 @@
 import { AudioLines, BookHeart, Brain, Download, Gem, Mic, Play, ShieldCheck, Sparkles as SparklesIcon } from "lucide-react";
 import Link from "next/link";
-import { Berries, Bird, BrushDivider, Butterfly, Leaf, Logo, Sparkles, Sprig } from "@/components/decor";
+import { Berries, Bird, BrushDivider, Butterfly, Illustration, Leaf, Logo, Sparkles, Sprig } from "@/components/decor";
 import { Reveal } from "@/components/layout/reveal";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -108,13 +108,16 @@ export default async function HomePage() {
               </div>
             </div>
             <Butterfly className="absolute -right-6 -top-8 w-14 animate-float [animation-delay:-1s]" />
+            <Illustration name="fox" priority className="absolute -bottom-10 -left-40 hidden w-44 lg:block xl:-left-52 xl:w-52" />
+            <Illustration name="mushrooms" className="absolute -bottom-6 -right-28 hidden w-24 lg:block" />
           </Reveal>
         </div>
         <BrushDivider tone="green" />
       </section>
 
       {/* Features */}
-      <section className="bg-[#2D4B39] py-20 text-cream dark:bg-[#16261d]">
+      <section className="relative bg-[#2D4B39] py-20 text-cream dark:bg-[#16261d]">
+        <Illustration name="bunny" className="absolute -top-6 right-[6%] hidden w-40 md:block lg:w-48" />
         <div className="container">
           <Reveal>
             <h2 className="max-w-2xl text-4xl font-semibold sm:text-5xl">Всё, из чего состоит человек</h2>
@@ -139,7 +142,8 @@ export default async function HomePage() {
 
       {/* Chapters */}
       <section id="chapters" className="relative py-20">
-        <Leaf className="absolute right-6 top-10 w-14 rotate-45 opacity-80" color="#C15C46" />
+        <Illustration name="squirrel" className="absolute right-4 top-6 w-24 sm:right-[8%] sm:w-36" />
+        <Leaf className="absolute left-4 top-4 w-12 rotate-45 opacity-80" color="#C15C46" />
         <div className="container">
           <Reveal>
             <p className="eyebrow">Семь глав жизни</p>
@@ -171,7 +175,11 @@ export default async function HomePage() {
       {/* Voice */}
       <section id="voice" className="relative">
         <BrushDivider tone="blue" />
-        <div className="bg-navy py-20 text-cream">
+        <div className="relative bg-navy py-20 text-cream">
+          <Illustration name="moon" className="absolute right-[6%] top-6 w-12 sm:w-16" />
+          <Illustration name="star-small" className="absolute right-[14%] top-16 w-5" />
+          <Illustration name="star" className="absolute left-[46%] top-10 hidden w-6 lg:block" />
+          <Illustration name="bear" className="absolute bottom-0 left-[38%] hidden w-44 xl:block" />
           <div className="container grid items-center gap-12 lg:grid-cols-2">
             <Reveal>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-honey">Голосовой архив</p>
@@ -219,7 +227,9 @@ export default async function HomePage() {
       {/* CTA */}
       <section className="relative py-24 text-center">
         <Sparkles className="absolute left-[12%] top-10 w-16" />
-        <Leaf className="absolute bottom-8 right-[10%] w-14 -rotate-45" color="#5E8357" />
+        <Illustration name="hedgehog" className="absolute bottom-6 left-[6%] hidden w-36 md:block" />
+        <Illustration name="daisy" className="absolute bottom-4 right-[8%] w-12 sm:w-16" />
+        <Illustration name="ladybug" className="absolute right-[20%] top-8 hidden w-16 md:block" />
         <div className="container">
           <Reveal>
             <h2 className="mx-auto max-w-3xl text-4xl font-semibold sm:text-5xl">Начните с одного воспоминания</h2>

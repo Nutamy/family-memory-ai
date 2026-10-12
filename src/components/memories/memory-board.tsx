@@ -3,6 +3,7 @@
 import { AudioLines, CalendarDays, MapPin, Palette, Plus, Search, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Illustration } from "@/components/decor";
 import { Badge, type BadgeColor } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -119,6 +120,7 @@ export function MemoryBoard({ personId, initial }: { personId: string; initial: 
 
       {memories.length === 0 ? (
         <div className="mt-10 rounded-3xl border-2 border-dashed p-10 text-center">
+          <Illustration name="hedgehog" className="mx-auto mb-4 w-32" />
           <p className="font-serif text-2xl font-semibold">Здесь будет книга воспоминаний</p>
           <p className="mx-auto mt-2 max-w-md text-muted-foreground">
             Запишите первую историю: свадьба родителей, первый школьный день, поездка к морю. Добавьте теги, чтобы потом легко находить.

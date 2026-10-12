@@ -1,5 +1,5 @@
 import { AudioLines, Bot, Clapperboard, Cpu, FileArchive, FileJson, Gauge, Mic, Type } from "lucide-react";
-import { Bird } from "@/components/decor";
+import { Illustration } from "@/components/decor";
 import { CopyButton } from "@/components/export/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,7 @@ export default async function ExportPage({ params }: { params: Promise<{ personI
       </section>
 
       <section className="relative overflow-hidden rounded-[2rem] bg-navy p-6 text-cream sm:p-10">
-        <Bird className="absolute right-6 top-6 w-24 opacity-90" />
+        <Illustration name="squirrel" className="absolute right-6 top-4 hidden w-28 sm:block" />
         <h2 className="text-3xl font-semibold">Скачать архив</h2>
         <p className="mt-2 max-w-xl text-cream/70">Все файлы формируются на лету из вашей локальной базы и хранилища.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">

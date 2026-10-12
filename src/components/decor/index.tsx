@@ -42,106 +42,86 @@ export function Logo({ className, compact }: { className?: string; compact?: boo
   );
 }
 
-export function Leaf({ className, style, color = "#D99543" }: P & { color?: string }) {
+export const ILLUSTRATIONS = {
+  bird: [505, 389],
+  butterfly: [337, 358],
+  star: [95, 97],
+  "star-small": [75, 77],
+  moon: [180, 222],
+  bear: [586, 425],
+  bunny: [640, 457],
+  mushrooms: [292, 256],
+  "bee-trail": [374, 92],
+  ladybug: [326, 326],
+  daisy: [229, 526],
+  squirrel: [445, 441],
+  wildflowers: [348, 390],
+  leaf: [483, 324],
+  "leaf-birch": [244, 324],
+  "leaf-maple": [304, 298],
+  "leaf-oak": [251, 373],
+  cloud: [438, 178],
+  blueberries: [241, 344],
+  fox: [526, 640],
+  berries: [440, 640],
+  moth: [240, 190],
+  hedgehog: [407, 358],
+} as const;
+
+export type IllustrationName = keyof typeof ILLUSTRATIONS;
+
+/** Hand-painted watercolor illustration cut out from the brand sheets (public/illustrations). */
+export function Illustration({ name, className, style, priority }: P & { name: IllustrationName; priority?: boolean }) {
+  const [w, h] = ILLUSTRATIONS[name];
   return (
-    <svg viewBox="0 0 64 64" className={className} style={style} aria-hidden filter="url(#wc)">
-      <path d="M8 56C10 30 26 10 56 8c-2 28-20 46-48 48Z" fill={color} opacity=".85" />
-      <path d="M8 56C24 40 38 26 52 12" stroke="#7a4a1a" strokeOpacity=".45" strokeWidth="1.4" fill="none" />
-      <path d="M20 44c4-1 9-1 14 1M28 36c3-2 8-2 12-1M24 40c0-4 1-8 3-11M34 30c0-4 1-7 3-10" stroke="#7a4a1a" strokeOpacity=".3" strokeWidth="1" fill="none" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/illustrations/${name}.webp`}
+      width={w}
+      height={h}
+      alt=""
+      aria-hidden
+      draggable={false}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      className={cn("pointer-events-none h-auto select-none", className)}
+      style={style}
+    />
   );
+}
+
+const LEAF_BY_COLOR: Record<string, IllustrationName> = {
+  "#C15C46": "leaf-maple",
+  "#5E8357": "leaf-oak",
+};
+
+export function Leaf({ className, style, color }: P & { color?: string }) {
+  return <Illustration name={(color && LEAF_BY_COLOR[color]) || "leaf"} className={className} style={style} />;
 }
 
 export function Bird({ className, style }: P) {
-  return (
-    <svg viewBox="0 0 120 80" className={className} style={style} aria-hidden>
-      <g filter="url(#wc)">
-        <path d="M30 46c0-14 12-24 28-22 10 1 16 6 20 12l14-4-8 10c2 12-8 22-26 22-16 0-28-6-28-18Z" fill="#E2A34A" />
-        <path d="M44 40c10-16 26-22 40-20-6 10-16 18-30 22Z" fill="#D99543" />
-        <path d="M30 50c-8 2-14 0-20-4 6 8 12 10 20 10Z" fill="#C88838" />
-        <circle cx="80" cy="34" r="2.2" fill="#1D314F" />
-        <path d="M90 34l8 2-8 3Z" fill="#C15C46" />
-      </g>
-      <path d="M8 70c10-6 18-6 28 0" stroke="#1D314F" strokeOpacity=".35" strokeDasharray="3 5" fill="none" strokeLinecap="round" />
-    </svg>
-  );
+  return <Illustration name="bird" className={className} style={style} />;
 }
 
 export function Butterfly({ className, style }: P) {
-  return (
-    <svg viewBox="0 0 80 64" className={className} style={style} aria-hidden>
-      <g filter="url(#wc)">
-        <path d="M38 30C30 12 14 4 6 10s2 26 14 26c-8 4-10 16-2 18 8 2 16-8 20-18Z" fill="#D9803A" />
-        <path d="M42 30C50 12 66 4 74 10s-2 26-14 26c8 4 10 16 2 18-8 2-16-8-20-18Z" fill="#E2913F" />
-        <path d="M12 14c6 2 12 8 16 14M68 14c-6 2-12 8-16 14" stroke="#3a2412" strokeOpacity=".5" fill="none" />
-        <circle cx="12" cy="16" r="1.6" fill="#fff" opacity=".8" />
-        <circle cx="68" cy="16" r="1.6" fill="#fff" opacity=".8" />
-      </g>
-      <path d="M40 18v32" stroke="#2b1d12" strokeWidth="3" strokeLinecap="round" />
-      <path d="M40 18c-2-6-6-10-10-12M40 18c2-6 6-10 10-12" stroke="#2b1d12" strokeWidth="1.2" fill="none" />
-    </svg>
-  );
+  return <Illustration name="butterfly" className={className} style={style} />;
 }
 
 export function Berries({ className, style }: P) {
-  return (
-    <svg viewBox="0 0 80 100" className={className} style={style} aria-hidden>
-      <g filter="url(#wc)">
-        <path d="M40 98C40 70 36 40 30 14M38 60c8-8 18-12 28-14M34 36c-8-6-16-8-24-8" stroke="#5a3d2b" strokeWidth="1.6" fill="none" />
-        <path d="M44 72c10 0 18-6 22-14-10-2-18 4-22 14Z" fill="#5E8357" />
-        <path d="M36 80c-10-2-16-10-18-18 10 0 16 8 18 18Z" fill="#2D4B39" opacity=".85" />
-        {[
-          [30, 12],
-          [24, 8],
-          [34, 6],
-          [66, 44],
-          [72, 40],
-          [10, 28],
-          [6, 22],
-        ].map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r="4.2" fill="#C15C46" />
-        ))}
-      </g>
-    </svg>
-  );
+  return <Illustration name="berries" className={className} style={style} />;
 }
 
 export function Sprig({ className, style }: P) {
-  return (
-    <svg viewBox="0 0 120 140" className={className} style={style} aria-hidden>
-      <g filter="url(#wc)">
-        <path d="M60 138C58 100 52 60 40 20" stroke="#2D4B39" strokeWidth="2" fill="none" />
-        {[
-          [44, 34, -40],
-          [50, 54, 30],
-          [46, 74, -35],
-          [56, 92, 35],
-          [52, 112, -30],
-        ].map(([x, y, r], i) => (
-          <ellipse key={i} cx={x} cy={y} rx="20" ry="7" transform={`rotate(${r} ${x} ${y})`} fill={i % 2 ? "#5E8357" : "#2D4B39"} opacity=".85" />
-        ))}
-        <path d="M74 138c4-30 14-52 30-70" stroke="#5E8357" strokeWidth="1.6" fill="none" />
-        {[
-          [92, 84, 40],
-          [84, 104, -30],
-          [100, 70, 50],
-        ].map(([x, y, r], i) => (
-          <ellipse key={i} cx={x} cy={y} rx="14" ry="5" transform={`rotate(${r} ${x} ${y})`} fill="#D99543" opacity=".8" />
-        ))}
-      </g>
-    </svg>
-  );
+  return <Illustration name="wildflowers" className={className} style={style} />;
 }
 
 export function Sparkles({ className, style }: P) {
-  const star = (x: number, y: number, s: number) =>
-    `M${x} ${y - s}C${x + s * 0.15} ${y - s * 0.15} ${x + s * 0.15} ${y - s * 0.15} ${x + s} ${y}C${x + s * 0.15} ${y + s * 0.15} ${x + s * 0.15} ${y + s * 0.15} ${x} ${y + s}C${x - s * 0.15} ${y + s * 0.15} ${x - s * 0.15} ${y + s * 0.15} ${x - s} ${y}C${x - s * 0.15} ${y - s * 0.15} ${x - s * 0.15} ${y - s * 0.15} ${x} ${y - s}Z`;
   return (
-    <svg viewBox="0 0 80 60" className={className} style={style} aria-hidden>
-      <path d={star(20, 30, 12)} fill="#E2A34A" />
-      <path d={star(52, 14, 7)} fill="#E2A34A" opacity=".8" />
-      <path d={star(62, 44, 9)} fill="#E2A34A" opacity=".9" />
-    </svg>
+    <span className={cn("relative block aspect-[4/3]", className)} style={style} aria-hidden>
+      <Illustration name="star" className="absolute left-0 top-[30%] w-[45%]" />
+      <Illustration name="star-small" className="absolute right-[5%] top-0 w-[30%]" />
+      <Illustration name="star-small" className="absolute bottom-0 right-[25%] w-[22%] rotate-12" />
+    </span>
   );
 }
 
