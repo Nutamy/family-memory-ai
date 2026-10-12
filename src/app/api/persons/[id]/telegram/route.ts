@@ -5,7 +5,9 @@ import { assertPersonAccess, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { loadPersonBundle } from "@/lib/data";
 import { buildProfileJson } from "@/lib/export";
-import { escapeHtml, getTelegramClient } from "@/lib/integrations/telegram";
+import { db } from "@/lib/db";
+import { resumeUrl } from "@/lib/guest";
+import { botToken, escapeHtml, ownerChatId, sendText, TelegramClient } from "@/lib/integrations/telegram";
 import { buildReport, type PersonalityReport } from "@/lib/report";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { sendAudioBatch } from "@/lib/telegram-delivery";
@@ -34,13 +36,17 @@ function reportMessage(r: PersonalityReport, progress: number) {
 }
 
 /**
- * Sends the report text, profile.json and audio (MP3 and/or WAV) to the configured chat.
+ * Sends the report text, profile.json and audio (MP3 and/or WAV) to the person's own chat,
+ * with a copy to the owner's chat (TELEGRAM_CHAT_ID) when set.
  * Audio goes in batches: the client repeats the call with `next` until it is null.
  */
 export const POST = route<{ id: string }>(async (req, { id }) => {
   const person = await assertPersonAccess(id);
-  const tg = getTelegramClient();
-  if (!tg) throw new HttpError(501, "Telegram не настроен: задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID");
+  const token = botToken();
+  if (!token) throw new HttpError(501, "Telegram не настроен: задайте TELEGRAM_BOT_TOKEN");
+  const user = await db.user.findUniqueOrThrow({ where: { id: person.userId }, select: { telegramChatId: true } });
+  if (!user.telegramChatId) throw new HttpError(409, "Сначала подключите Telegram");
+  const tg = new TelegramClient(token, user.telegramChatId, ownerChatId());
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) throw new HttpError(400, "Некорректные данные");
   const items = new Set(parsed.data.items);
@@ -64,6 +70,9 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
       const { loadProgressInput } = await import("@/lib/data");
       const progress = computeProgress(await loadProgressInput(id)).overall.percent;
       await tg.sendMessage(reportMessage(buildReport(bundle), progress));
+      // Sent outside TelegramClient so the owner's copy never contains this bearer link.
+      const resume = await resumeUrl(new URL(req.url).origin, person.userId);
+      await sendText(token, user.telegramChatId, `🔗 Продолжить заполнение или дополнить ответы: ${escapeHtml(resume)}`);
       sent.push("report");
     }
     if (first && items.has("json")) {

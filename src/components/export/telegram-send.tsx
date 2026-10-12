@@ -2,6 +2,7 @@
 
 import { Check, Loader2, Send } from "lucide-react";
 import { useState } from "react";
+import { TelegramConnect } from "@/components/telegram/telegram-connect";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,8 @@ const OPTIONS = [
 
 type Item = (typeof OPTIONS)[number]["key"];
 
-export function TelegramSend({ personId, configured }: { personId: string; configured: boolean }) {
+export function TelegramSend({ personId, configured, connected: initiallyConnected }: { personId: string; configured: boolean; connected: boolean }) {
+  const [connected, setConnected] = useState(initiallyConnected);
   const [items, setItems] = useState<Item[]>(["report", "json"]);
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -50,11 +52,11 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
   if (!configured) {
     return (
       <p className="text-sm text-muted-foreground">
-        Бот не подключён. Добавьте переменные <code className="font-mono">TELEGRAM_BOT_TOKEN</code> и{" "}
-        <code className="font-mono">TELEGRAM_CHAT_ID</code> и перезапустите приложение.
+        Бот не настроен. Добавьте переменную <code className="font-mono">TELEGRAM_BOT_TOKEN</code> и перезапустите приложение.
       </p>
     );
   }
+  if (!connected) return <TelegramConnect connected={false} onConnected={() => setConnected(true)} />;
 
   return (
     <div className="space-y-4">

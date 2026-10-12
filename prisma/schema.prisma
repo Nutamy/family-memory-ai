@@ -18,9 +18,14 @@ model User {
   email        String   @unique
   passwordHash String?
   name         String?
-  // Reserved for OAuth (google | microsoft | apple); "credentials" for email+password.
+  // "credentials" (email+password), "guest" (no sign-in, see src/lib/guest.ts),
+  // "cloudflare-access"; reserved for OAuth (google | microsoft | apple).
   provider     String   @default("credentials")
   providerId   String?
+  // Private chat with the bot, linked via the "Подключить Telegram" deep link.
+  telegramChatId   String?
+  // One-time code in t.me/<bot>?start=<code>; cleared once the chat is linked.
+  telegramLinkCode String?  @unique
   createdAt    DateTime @default(now())
   persons      Person[]
 }

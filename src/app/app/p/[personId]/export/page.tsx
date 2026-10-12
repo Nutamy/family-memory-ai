@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { requirePerson } from "@/lib/auth";
 import { loadPersonBundle } from "@/lib/data";
+import { db } from "@/lib/db";
 import { buildExportStats } from "@/lib/export";
 import { integrationStatus } from "@/lib/integrations";
 import { buildPersonaPrompt } from "@/lib/integrations/persona";
@@ -19,7 +20,8 @@ export const metadata = { title: "Экспорт и ИИ" };
 
 export default async function ExportPage({ params }: { params: Promise<{ personId: string }> }) {
   const { personId } = await params;
-  await requirePerson(personId);
+  const { user } = await requirePerson(personId);
+  const { telegramChatId } = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { telegramChatId: true } });
   const bundle = await loadPersonBundle(personId);
   const stats = buildExportStats(bundle);
   const integrations = integrationStatus();
@@ -85,10 +87,10 @@ export default async function ExportPage({ params }: { params: Promise<{ personI
       <Card>
         <CardHeader>
           <CardTitle>Отправить в Telegram</CardTitle>
-          <CardDescription>Результаты придут в чат с вашим ботом. Каждая запись приходит отдельным файлом; записи больше 50 МБ (лимит ботов) — кусками.</CardDescription>
+          <CardDescription>Результаты придут вам в Telegram от нашего бота. Каждая запись приходит отдельным файлом; записи больше 50 МБ (лимит ботов) — кусками.</CardDescription>
         </CardHeader>
         <CardContent>
-          <TelegramSend personId={personId} configured={integrations.telegram} />
+          <TelegramSend personId={personId} configured={integrations.telegram} connected={!!telegramChatId} />
         </CardContent>
       </Card>
 

@@ -23,11 +23,13 @@
   // Non-secret settings. Secrets (TELEGRAM_BOT_TOKEN, ...) go through `wrangler secret put`.
   "vars": {
     "STORAGE_DRIVER": "r2",
-    // Sign-in through Cloudflare Access (docs/cloudflare.md, step 8). Both values are public.
-    // Team domain: "<team>.cloudflareaccess.com"; AUD: the Access application's audience tag
-    // (optional but recommended: without it tokens of any app in this team are accepted).
-    "CF_ACCESS_TEAM_DOMAIN": "misty-rain-abed.cloudflareaccess.com",
-    "CF_ACCESS_AUD": "7f76fdbf967b738661ac5419b645a6392d2901c5a67e9dce5ca268fc3113542f",
+    // "guest": no sign-in, the bot links each visitor's Telegram (src/lib/auth-mode.ts).
+    "AUTH_MODE": "guest",
+    // Optional: put the site behind Cloudflare Access instead (docs/cloudflare.md, appendix).
+    // Values used before switching to guest mode: misty-rain-abed.cloudflareaccess.com,
+    // AUD 7f76fdbf967b738661ac5419b645a6392d2901c5a67e9dce5ca268fc3113542f.
+    "CF_ACCESS_TEAM_DOMAIN": "",
+    "CF_ACCESS_AUD": "",
     // Telegram: each recording is one document; bigger files are cut into chunks of this size.
     // 30 MB keeps memory well under the 128 MB isolate limit; 5 documents per request
     // stays within the Free plan's 50 subrequests.

@@ -5,6 +5,7 @@ import { Reveal } from "@/components/layout/reveal";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getSessionUserId } from "@/lib/auth";
+import { authMode } from "@/lib/auth-mode";
 import { cloudflareEnv } from "@/lib/cloudflare";
 import { CHAPTERS } from "@/lib/questionnaire";
 
@@ -32,7 +33,7 @@ export default async function HomePage() {
           </a>
           <ThemeToggle />
           <Button asChild size="sm">
-            <Link href={loggedIn ? "/app" : "/login"}>{loggedIn ? "Мои архивы" : "Войти"}</Link>
+            <Link href={loggedIn ? "/app" : "/login"}>{loggedIn ? "Мои архивы" : authMode() === "guest" ? "Начать" : "Войти"}</Link>
           </Button>
         </nav>
       </header>
