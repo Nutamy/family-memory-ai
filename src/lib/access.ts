@@ -1,5 +1,5 @@
 // Cloudflare Access (Zero Trust) sign-in. Edge-safe: used by middleware and route handlers.
-// When CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are set, Access in front of the site checks the
+// When CF_ACCESS_TEAM_DOMAIN is set (CF_ACCESS_AUD recommended), Access in front of the site checks the
 // email (one-time code), and the app only verifies the signed JWT Access attaches to every request.
 // No passwords are hashed, which keeps requests within the Workers Free CPU limit.
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -11,8 +11,9 @@ export const ACCESS_LOGOUT_PATH = "/cdn-cgi/access/logout";
 
 export function accessConfig() {
   const team = process.env.CF_ACCESS_TEAM_DOMAIN?.trim().replace(/\/+$/, "");
-  const aud = process.env.CF_ACCESS_AUD?.trim();
-  if (!team || !aud) return null;
+  if (!team) return null;
+  // Without AUD any application of this team is accepted; with it, only this site's tokens.
+  const aud = process.env.CF_ACCESS_AUD?.trim() || undefined;
   // "family.cloudflareaccess.com" → https; an explicit scheme is kept (local tests).
   return { issuer: team.includes("://") ? team : `https://${team}`, aud };
 }

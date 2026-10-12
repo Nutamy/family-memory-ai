@@ -106,7 +106,7 @@ storage/                 аудио и фото (локальное хранил
 
 Два режима:
 
-- **Cloudflare Access** (в бою на Cloudflare): вход по одноразовому коду из письма для emails из вашего списка. Приложение проверяет подписанный токен Access и само создаёт пользователя по email. Паролей нет. Включается переменными `CF_ACCESS_TEAM_DOMAIN` и `CF_ACCESS_AUD` (`src/lib/access.ts`, инструкция — [docs/cloudflare.md](docs/cloudflare.md), шаг 8).
+- **Cloudflare Access** (в бою на Cloudflare): вход по одноразовому коду из письма для emails из вашего списка. Приложение проверяет подписанный токен Access и само создаёт пользователя по email. Паролей нет. Включается переменной `CF_ACCESS_TEAM_DOMAIN` (и желательно `CF_ACCESS_AUD`) (`src/lib/access.ts`, инструкция — [docs/cloudflare.md](docs/cloudflare.md), шаг 8).
 - **Email + пароль** (локально и на Node-хостинге): bcrypt, не короче 8 символов, подписанная JWT-cookie (`jose`).
 
  В модели `User` есть поля `provider` и `providerId` под Google, Microsoft и Apple: достаточно добавить OAuth-callback, который создаёт пользователя и вызывает `createSessionToken` (`src/lib/session.ts`). Для полноценной OAuth-интеграции удобно подключить Auth.js.

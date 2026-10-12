@@ -110,7 +110,7 @@ npm run cf:deploy
 2. Нажмите **Manage Cloudflare Access**. Откроется политика доступа: в правиле **Include → Emails** перечислите адреса членов семьи (свой — обязательно).
 3. Скопируйте два значения:
    - **Team domain** — `ourfamily.cloudflareaccess.com` (Zero Trust → **Settings → Team name and domain**);
-   - **Application Audience (AUD) Tag** — Zero Trust → **Access → Applications** → приложение вашего Worker'а → **Overview / Additional settings**.
+   - **Application Audience (AUD) Tag** (желательно, но не обязательно) — Zero Trust → **Access → Applications** → нажмите на название приложения → вкладка **Overview** (или **⋯ → Configure → Overview**). Без AUD приложение принимает вход через любое Access-приложение вашей команды; если оно у вас одно, разницы нет.
 4. Впишите их в `wrangler.jsonc`. Оба значения не секретные:
 
    ```jsonc
