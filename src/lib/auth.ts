@@ -76,6 +76,7 @@ export async function assertPersonAccess(personId: string) {
 
 export function apiError(err: unknown) {
   if (err instanceof HttpError) return NextResponse.json({ error: err.message }, { status: err.status });
-  console.error(err);
+  // First line carries the cause (e.g. Prisma "no such table"), so it shows in the Workers log list.
+  console.error(err instanceof Error ? `${err.name}: ${err.message.trim()}` : err);
   return NextResponse.json({ error: "Внутренняя ошибка сервера" }, { status: 500 });
 }
