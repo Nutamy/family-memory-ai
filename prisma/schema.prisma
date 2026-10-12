@@ -170,3 +170,14 @@ model FavoriteItem {
 
   @@index([personId, kind])
 }
+
+// Fixed-window counters for brute-force / abuse protection (src/lib/security/rate-limit.ts).
+// Lives in the main DB so limits hold across all Workers isolates.
+model RateLimit {
+  // SHA-256 of "<scope>:<subject>", so emails and IPs are not stored in clear text.
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}

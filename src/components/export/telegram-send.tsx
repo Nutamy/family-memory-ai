@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 const OPTIONS = [
   { key: "report", label: "Отчёт о личности" },
   { key: "json", label: "JSON профиля" },
-  { key: "audio", label: "Аудио (MP3, ZIP)" },
+  { key: "audio", label: "Аудио MP3" },
+  { key: "wav", label: "Аудио WAV (оригинал)" },
 ] as const;
 
 type Item = (typeof OPTIONS)[number]["key"];
@@ -18,12 +19,14 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
   const [items, setItems] = useState<Item[]>(["report", "json"]);
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [documents, setDocuments] = useState(0);
 
   async function send() {
     setState("sending");
     setError(null);
     try {
-      await api(`/api/persons/${personId}/telegram`, { method: "POST", json: { items } });
+      const res = await api<{ documents: number }>(`/api/persons/${personId}/telegram`, { method: "POST", json: { items } });
+      setDocuments(res.documents);
       setState("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка");
@@ -67,8 +70,11 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
         </Button>
         {state === "done" && (
           <span className="inline-flex items-center gap-1 text-sm font-semibold text-grass">
-            <Check className="size-4" /> Отправлено
+            <Check className="size-4" /> Отправлено{documents > 1 ? ` (${documents} файлов)` : ""}
           </span>
+        )}
+        {state === "sending" && items.some((i) => i === "audio" || i === "wav") && (
+          <span className="text-sm text-muted-foreground">Аудио уходит частями до 50 МБ — это может занять несколько минут</span>
         )}
         {error && <span className="text-sm font-semibold text-primary">{error}</span>}
       </div>

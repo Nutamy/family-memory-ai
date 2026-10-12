@@ -1,25 +1,37 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { HttpError } from "@/lib/auth";
+import { route } from "@/lib/api";
 import { db } from "@/lib/db";
+import { guardPublicForm } from "@/lib/security/form-guard";
+import { clientIp, rateLimit } from "@/lib/security/rate-limit";
 import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
 const schema = z.object({
   name: z.string().trim().max(100).optional(),
-  email: z.string().trim().toLowerCase().email("Некорректный email"),
-  password: z.string().min(6, "Пароль должен быть не короче 6 символов").max(200),
+  email: z.string().trim().toLowerCase().max(254).email("Некорректный email"),
+  password: z
+    .string()
+    .min(8, "Пароль должен быть не короче 8 символов")
+    // bcrypt silently ignores bytes after the 72nd.
+    .refine((p) => new TextEncoder().encode(p).byteLength <= 72, "Пароль слишком длинный (до 72 байт)"),
 });
 
-export async function POST(req: Request) {
-  const parsed = schema.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
+export const POST = route(async (req) => {
+  const body = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+  await rateLimit(`register-ip:${clientIp(req)}`, { limit: 5, windowSec: 60 * 60 });
+  await guardPublicForm(req, body);
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) throw new HttpError(400, parsed.error.issues[0]?.message ?? "Некорректные данные");
   const { email, password, name } = parsed.data;
 
   if (await db.user.findUnique({ where: { email } })) {
-    return NextResponse.json({ error: "Пользователь с таким email уже существует" }, { status: 409 });
+    throw new HttpError(409, "Пользователь с таким email уже существует");
   }
   const user = await db.user.create({ data: { email, name, passwordHash: await bcrypt.hash(password, 10) } });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email }), sessionCookieOptions);
   return res;
-}
+});

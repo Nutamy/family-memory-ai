@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { StorageDriver } from "./types";
+import type { StorageBody, StorageDriver } from "./types";
 
 export class LocalStorageDriver implements StorageDriver {
   private root: string;
@@ -16,14 +16,33 @@ export class LocalStorageDriver implements StorageDriver {
     return full;
   }
 
-  async put(key: string, data: Buffer) {
+  async put(key: string, data: StorageBody) {
     const full = this.resolve(key);
     await fs.mkdir(path.dirname(full), { recursive: true });
-    await fs.writeFile(full, data);
+    await fs.writeFile(full, data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) : data);
   }
 
   async get(key: string) {
     return fs.readFile(this.resolve(key));
+  }
+
+  async getRange(key: string, offset: number, length: number) {
+    const fh = await fs.open(this.resolve(key), "r");
+    try {
+      const buf = Buffer.alloc(length);
+      const { bytesRead } = await fh.read(buf, 0, length, offset);
+      return buf.subarray(0, bytesRead);
+    } finally {
+      await fh.close();
+    }
+  }
+
+  async size(key: string) {
+    try {
+      return (await fs.stat(this.resolve(key))).size;
+    } catch {
+      return null;
+    }
   }
 
   async delete(key: string) {
@@ -31,11 +50,6 @@ export class LocalStorageDriver implements StorageDriver {
   }
 
   async exists(key: string) {
-    try {
-      await fs.access(this.resolve(key));
-      return true;
-    } catch {
-      return false;
-    }
+    return (await this.size(key)) !== null;
   }
 }
