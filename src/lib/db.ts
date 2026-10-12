@@ -1,6 +1,7 @@
 import { PrismaD1 } from "@prisma/adapter-d1";
 import { PrismaClient } from "@prisma/client";
 import { cloudflareContext } from "./cloudflare";
+import { ensureD1 } from "./d1-bootstrap";
 
 // Node: one SQLite client, reused across hot reloads in development.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
@@ -16,7 +17,16 @@ function client(): PrismaClient {
   if (cf?.env.DB) {
     let c = perRequest.get(cf.ctx);
     if (!c) {
-      c = new PrismaClient({ adapter: new PrismaD1(cf.env.DB) });
+      const d1 = cf.env.DB;
+      // A fresh database gets its tables and question catalogue before the first query.
+      c = new PrismaClient({ adapter: new PrismaD1(d1) }).$extends({
+        query: {
+          async $allOperations({ args, query }) {
+            await ensureD1(d1);
+            return query(args);
+          },
+        },
+      }) as unknown as PrismaClient;
       perRequest.set(cf.ctx, c);
     }
     return c;

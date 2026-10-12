@@ -5,6 +5,7 @@ import { Reveal } from "@/components/layout/reveal";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getSessionUserId } from "@/lib/auth";
+import { cloudflareEnv } from "@/lib/cloudflare";
 import { CHAPTERS } from "@/lib/questionnaire";
 
 const FEATURES = [
@@ -16,6 +17,7 @@ const FEATURES = [
 
 export default async function HomePage() {
   const loggedIn = !!(await getSessionUserId());
+  const onCloudflare = !!cloudflareEnv()?.DB;
 
   return (
     <main className="overflow-hidden">
@@ -250,7 +252,11 @@ export default async function HomePage() {
       <footer className="border-t py-8">
         <div className="container flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
           <Logo compact />
-          <p>Данные хранятся у вас: локальная база SQLite и файлы на вашем сервере.</p>
+          <p>
+            {onCloudflare
+              ? "Данные хранятся в вашем аккаунте Cloudflare: база D1 и закрытое хранилище R2."
+              : "Данные хранятся у вас: локальная база SQLite и файлы на вашем сервере."}
+          </p>
         </div>
       </footer>
     </main>

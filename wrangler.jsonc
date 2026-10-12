@@ -24,8 +24,9 @@
   "vars": {
     "STORAGE_DRIVER": "r2",
     // Sign-in through Cloudflare Access (docs/cloudflare.md, step 8). Both values are public.
-    // Team domain: "<team>.cloudflareaccess.com"; AUD: the Access application's audience tag.
-    "CF_ACCESS_TEAM_DOMAIN": "",
+    // Team domain: "<team>.cloudflareaccess.com"; AUD: the Access application's audience tag
+    // (optional but recommended: without it tokens of any app in this team are accepted).
+    "CF_ACCESS_TEAM_DOMAIN": "misty-rain-abed.cloudflareaccess.com",
     "CF_ACCESS_AUD": "",
     // Telegram: each recording is one document; bigger files are cut into chunks of this size.
     // 30 MB keeps memory well under the 128 MB isolate limit; 5 documents per request
