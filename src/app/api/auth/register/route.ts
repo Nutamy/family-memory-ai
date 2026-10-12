@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { HttpError } from "@/lib/auth";
+import { isAccessMode } from "@/lib/access";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
 import { guardPublicForm } from "@/lib/security/form-guard";
@@ -19,6 +20,8 @@ const schema = z.object({
 });
 
 export const POST = route(async (req) => {
+  // Under Cloudflare Access there are no app passwords at all.
+  if (isAccessMode()) throw new HttpError(404, "Вход выполняется через Cloudflare Access");
   const body = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   await rateLimit(`register-ip:${clientIp(req)}`, { limit: 5, windowSec: 60 * 60 });
   await guardPublicForm(req, body);

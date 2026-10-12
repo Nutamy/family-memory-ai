@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { isAccessMode } from "@/lib/access";
 import { turnstileSiteKey } from "@/lib/security/form-guard";
 
 // Rendered per request: Turnstile keys and the demo hint come from runtime env.
@@ -12,6 +14,8 @@ export const metadata = { title: "Вход" };
 const showDemo = () => process.env.NODE_ENV !== "production" || process.env.SHOW_DEMO_LOGIN === "1";
 
 export default function LoginPage() {
+  // Cloudflare Access has already signed the visitor in.
+  if (isAccessMode()) redirect("/app");
   return (
     <AuthShell title="С возвращением" subtitle="Войдите, чтобы продолжить заполнение архива.">
       <Suspense>

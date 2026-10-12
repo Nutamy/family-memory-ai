@@ -104,11 +104,16 @@ storage/                 аудио и фото (локальное хранил
 
 ## Авторизация
 
-MVP — email + пароль (bcrypt, не короче 8 символов) и подписанная JWT-cookie (`jose`). В модели `User` есть поля `provider` и `providerId` под Google, Microsoft и Apple: достаточно добавить OAuth-callback, который создаёт пользователя и вызывает `createSessionToken` (`src/lib/session.ts`). Для полноценной OAuth-интеграции удобно подключить Auth.js.
+Два режима:
+
+- **Cloudflare Access** (в бою на Cloudflare): вход по одноразовому коду из письма для emails из вашего списка. Приложение проверяет подписанный токен Access и само создаёт пользователя по email. Паролей нет. Включается переменными `CF_ACCESS_TEAM_DOMAIN` и `CF_ACCESS_AUD` (`src/lib/access.ts`, инструкция — [docs/cloudflare.md](docs/cloudflare.md), шаг 8).
+- **Email + пароль** (локально и на Node-хостинге): bcrypt, не короче 8 символов, подписанная JWT-cookie (`jose`).
+
+ В модели `User` есть поля `provider` и `providerId` под Google, Microsoft и Apple: достаточно добавить OAuth-callback, который создаёт пользователя и вызывает `createSessionToken` (`src/lib/session.ts`). Для полноценной OAuth-интеграции удобно подключить Auth.js.
 
 ## Безопасность
 
-Лимиты попыток входа и регистрации (счётчики в БД), проверка `Origin` у всех изменяющих запросов (CSRF), honeypot и Cloudflare Turnstile на формах, проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. Подробности и настройки панели Cloudflare — в [docs/cloudflare.md](docs/cloudflare.md#безопасность-базы-данных-и-форм).
+Cloudflare Access с проверкой подписи в каждом запросе, проверка `Origin` у всех изменяющих запросов (CSRF), лимиты частоты (счётчики в БД), проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. В режиме паролей добавляются лимит попыток входа, honeypot и Cloudflare Turnstile. Подробности — в [docs/cloudflare.md](docs/cloudflare.md#безопасность).
 
 ## Интеграции ИИ
 
@@ -127,13 +132,15 @@ MVP — email + пароль (bcrypt, не короче 8 символов) и �
 
 На экране «Экспорт и ИИ» есть кнопка «Отправить в Telegram»: бот присылает отчёт о личности текстом, `profile.json` и аудио в MP3 и/или WAV.
 
-У ботов лимит 50 МБ на файл, поэтому аудио уходит **частями**: записи целиком раскладываются по ZIP-архивам `…-part001-of-005.zip` размером до `TELEGRAM_PART_MB` (по умолчанию 45 МБ, на Cloudflare 20 МБ). В первой части лежат `audio/metadata.json` (какой файл в какой части) и расшифровки. Если одна запись сама больше части, она режется на куски `запись.wav.001`, `.002`, …: их открывает 7-Zip или склеивает `cat запись.wav.0* > запись.wav` (Windows: `copy /b запись.wav.001 + запись.wav.002 запись.wav`). При ответе Telegram 429 (слишком часто) отправка ждёт и повторяет.
+Каждая запись приходит **отдельным файлом**, без упаковки: так не тратится процессорное время, что важно на бесплатном тарифе Cloudflare. Первым приходит `…-index.zip` с `metadata.json` (какая запись в каком файле) и расшифровками. У ботов лимит 50 МБ на файл, поэтому запись больше `TELEGRAM_PART_MB` (по умолчанию 45 МБ, на Cloudflare 30 МБ) режется на куски `запись.wav.001`, `.002`, …. Их открывает 7-Zip или склеивает `cat запись.wav.0* > запись.wav` (Windows: `copy /b запись.wav.001 + запись.wav.002 запись.wav`).
+
+Отправка идёт пачками по `TELEGRAM_BATCH` файлов (по умолчанию 5): страница повторяет запрос и показывает прогресс, пока не уйдёт всё. При ответе Telegram 429 (слишком часто) отправка ждёт и повторяет.
 
 1. Создайте бота у [@BotFather](https://t.me/BotFather) и скопируйте токен.
 2. Напишите боту `/start`, затем откройте `https://api.telegram.org/bot<TOKEN>/getUpdates` и возьмите `chat.id`. Для группы добавьте бота в группу; её id начинается с `-100`.
 3. Задайте переменные `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` (также понимаются `TELEGRAM_TOKEN` / `BOT_TOKEN` и `CHAT_ID`).
 
-Код: `src/lib/integrations/telegram.ts`, `src/lib/telegram-delivery.ts`, маршрут `POST /api/persons/:id/telegram` с телом `{ "items": ["report", "json", "audio", "wav"] }` (`audio` — MP3).
+Код: `src/lib/integrations/telegram.ts`, `src/lib/telegram-delivery.ts`, маршрут `POST /api/persons/:id/telegram` с телом `{ "items": ["report", "json", "audio", "wav"], "cursor": 0 }` (`audio` — MP3); ответ `{ next, total }`, `next: null` — всё отправлено.
 
 ## Дизайн
 

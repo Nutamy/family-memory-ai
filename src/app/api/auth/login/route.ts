@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { HttpError } from "@/lib/auth";
+import { isAccessMode } from "@/lib/access";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
 import { guardPublicForm } from "@/lib/security/form-guard";
@@ -11,6 +12,8 @@ import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/
 let dummyHash: Promise<string> | null = null;
 
 export const POST = route(async (req) => {
+  // Under Cloudflare Access there are no app passwords at all.
+  if (isAccessMode()) throw new HttpError(404, "Вход выполняется через Cloudflare Access");
   const body = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 254);
   const password = String(body.password ?? "");

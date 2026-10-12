@@ -1,5 +1,6 @@
 # Local secrets for `npm run cf:preview` / `npm run dev:cf` (copy to .dev.vars).
 # In production set each one with: npx wrangler secret put <NAME>
+# Password mode only (when CF_ACCESS_* are empty)
 AUTH_SECRET="generate: openssl rand -base64 48"
 NEXTJS_ENV="development"
 # TELEGRAM_BOT_TOKEN=""
