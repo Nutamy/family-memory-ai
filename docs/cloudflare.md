@@ -1,4 +1,4 @@
-# Развёртывание на Cloudflare (бесплатный тариф): Workers + D1 + R2 + Access
+# Развёртывание на Cloudflare (бесплатный тариф): Workers + D1 + R2
 
 Приложение собирается адаптером [OpenNext](https://opennext.js.org/cloudflare) и работает как **Cloudflare Worker**:
 
@@ -7,11 +7,13 @@
 | Сайт и API (Next.js) | Workers | 100 000 запросов в день |
 | База данных | D1, привязка `DB` | 5 ГБ |
 | Аудио и фото | R2, привязка `BUCKET`, приватный бакет | 10 ГБ |
-| Вход для семьи | Cloudflare Access (Zero Trust) | до 50 человек |
+| Вход | свой: email + пароль и Google | без ограничений |
 
-**Как устроен вход.** Паролей в приложении нет. Перед сайтом стоит Cloudflare Access: человек вводит email, получает на почту одноразовый код и попадает на сайт, только если его email есть в вашем списке. Посторонний не увидит даже первую страницу. Приложение проверяет подпись Cloudflare в каждом запросе и по email понимает, кто пришёл. У каждого члена семьи свои архивы.
+**Как устроен вход.** Регистрация на самом сайте: email и пароль или кнопка «Войти через Google». Сессия — подписанная cookie на 30 дней. У каждого пользователя свои архивы.
 
-Код сам понимает, где запущен: на Workers берёт D1 и R2, на обычном Node-сервере (`npm run dev`) — SQLite-файл, папку `storage/` и вход по паролю.
+**Без регистрации.** Архив можно вести на устройстве: данные лежат в IndexedDB браузера, а запросы к API обслуживает service worker (`public/sw.js`), сервер их не видит. Такой архив позже переносится в аккаунт кнопкой «В аккаунт» на странице `/local`.
+
+Код сам понимает, где запущен: на Workers берёт D1 и R2, на обычном Node-сервере (`npm run dev`) — SQLite-файл и папку `storage/`.
 
 ---
 
@@ -28,7 +30,7 @@
 ## 1. Что понадобится
 
 - Аккаунт Cloudflare на бесплатном тарифе.
-- Карта в аккаунте. Её просят R2 и Zero Trust даже на бесплатных тарифах, но без превышения бесплатных лимитов ничего не списывают.
+- Карта в аккаунте. Её просит R2 даже на бесплатном тарифе, но без превышения бесплатных лимитов ничего не списывают.
 - Node.js 20+ и клон репозитория с выполненным `npm install`.
 
 ## 2. Вход в Cloudflare из терминала
@@ -85,8 +87,6 @@ npx wrangler r2 bucket create family-memory-files
 
 ## 6. Проверить сборку локально
 
-Локально Access не нужен: без настроек `CF_ACCESS_*` приложение работает в режиме входа по паролю.
-
 ```bash
 cp .dev.vars.example .dev.vars   # впишите AUTH_SECRET (любая длинная строка)
 npm run d1:migrate               # локальная копия D1 в .wrangler/
@@ -102,30 +102,43 @@ npm run cf:preview               # сборка OpenNext и запуск в work
 npm run cf:deploy
 ```
 
-В конце появится адрес `https://family-memory-ai.<субдомен>.workers.dev`. **Пока Access не включён, сайт открыт всем — сразу переходите к шагу 8.**
+Перед первым деплоем задайте секрет для подписи сессий (без него вход не работает):
 
-## 8. Включить Cloudflare Access (вход по коду из письма)
+```bash
+openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
+```
 
-1. **Workers & Pages → family-memory-ai → Settings → Domains & Routes**. В строке `workers.dev` нажмите **Enable Cloudflare Access**. Если Zero Trust ещё не подключён, Cloudflare попросит выбрать название команды (*team name*, например `ourfamily`) и тариф — выберите **Free**.
-2. Нажмите **Manage Cloudflare Access**. Откроется политика доступа: в правиле **Include → Emails** перечислите адреса членов семьи (свой — обязательно).
-3. Скопируйте два значения:
-   - **Team domain** — `ourfamily.cloudflareaccess.com` (Zero Trust → **Settings → Team name and domain**);
-   - **Application Audience (AUD) Tag** (желательно, но не обязательно) — Zero Trust → **Access → Applications** → нажмите на название приложения → вкладка **Overview** (или **⋯ → Configure → Overview**). Без AUD приложение принимает вход через любое Access-приложение вашей команды; если оно у вас одно, разницы нет.
-4. Впишите их в `wrangler.jsonc`. Оба значения не секретные:
+В конце появится адрес `https://family-memory-ai.<субдомен>.workers.dev`.
+
+> **Если раньше был включён Cloudflare Access**, выключите его, иначе Cloudflare по-прежнему будет требовать код из письма: **Workers & Pages → family-memory-ai → Settings → Domains & Routes** → у `workers.dev` выключите Cloudflare Access, затем в **Zero Trust → Access → Applications** удалите приложение `family-memory-ai`.
+
+## 8. Вход через Google
+
+Без этого шага работает вход по email и паролю, кнопки Google просто нет.
+
+1. Откройте [Google Cloud Console](https://console.cloud.google.com/) и создайте проект (например, `family-memory`).
+2. **Google Auth Platform → Branding**: название приложения, email поддержки, домен сайта. **Audience**: тип **External**, затем **Publish app**. Приложение запрашивает только `openid`, `email` и `profile`, для них проверка Google не нужна.
+3. **Google Auth Platform → Clients → Create client**: тип **Web application**. В **Authorized redirect URIs** добавьте:
+   - `https://family-memory-ai.<субдомен>.workers.dev/api/auth/google/callback`;
+   - `https://memory.example.com/api/auth/google/callback`, если есть свой домен (шаг 12);
+   - `http://localhost:3000/api/auth/google/callback` и `http://localhost:8787/api/auth/google/callback` для локальной проверки.
+4. Скопируйте **Client ID** в `wrangler.jsonc` (он не секретный):
 
    ```jsonc
-   "CF_ACCESS_TEAM_DOMAIN": "ourfamily.cloudflareaccess.com",
-   "CF_ACCESS_AUD": "4714c1358e65fe4b408ad6d432a5f878f08194bdb4752441fd56faefa9b2b6f2",
+   "GOOGLE_CLIENT_ID": "1234567890-abc.apps.googleusercontent.com",
    ```
 
-5. `npm run cf:deploy`.
-6. Проверка: откройте сайт в окне инкогнито. Появится страница Cloudflare «Get a login code»: введите email из списка, затем код из письма. Email не из списка код не получит.
+5. **Client secret** — секретом:
 
-Пароли в приложении в этом режиме выключены: `/login` и `/register` сразу ведут в архив. Кнопка «Выйти» завершает сессию Access.
+   ```bash
+   npx wrangler secret put GOOGLE_CLIENT_SECRET
+   ```
 
-**Добавить или убрать человека:** Zero Trust → **Access → Policies** → политика приложения → список Emails. Деплой не нужен.
+6. `npm run cf:deploy`. Проверка: на `/login` появится «Войти через Google».
 
-> Свой домен (шаг 12) защищается отдельно: Zero Trust → **Access → Applications → Add an application → Self-hosted**, домен `memory.example.com`, та же политика. AUD у этого приложения будет другим — используйте его. Даже если домен забудут защитить, приложение без подписи Access ответит 403.
+Если человек сначала зарегистрировался по паролю, а потом вошёл через Google с тем же email, это один аккаунт. Пароль при этом сбрасывается: регистрация по email не подтверждает адрес, а Google подтверждает. Дальше человек входит через Google.
+
+> Адрес возврата строится из адреса запроса. Если сайт стоит за прокси, который подменяет `Host`, задайте публичный адрес переменной `APP_URL`.
 
 ## 9. Telegram
 
@@ -138,13 +151,14 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 
 ## 10. Проверить, что бесплатного тарифа хватает
 
-На бесплатном тарифе у одного запроса 10 мс процессорного времени. Приложение под это подстроено: нет хэширования паролей, аудио в Telegram уходит без упаковки, по 5 файлов за запрос. Но насколько быстро в бою отрабатывают страницы и запросы к базе, проверить можно только на месте:
+На бесплатном тарифе у одного запроса 10 мс процессорного времени. Приложение под это подстроено: пароли хэшируются встроенным в Workers PBKDF2 (около 20 мс, только при входе и регистрации), аудио в Telegram уходит без упаковки, по 5 файлов за запрос. Но насколько быстро в бою отрабатывают страницы и запросы к базе, проверить можно только на месте:
 
 1. **Workers & Pages → family-memory-ai → Observability (Logs)**. Пройдите по всем разделам сайта, запишите голос, отправьте результаты в Telegram.
 2. Поищите в логах `Exceeded CPU Limit` или ответы `1102`.
    - Ничего нет — всё в порядке.
    - Ошибки бывают изредка — Cloudflare допускает небольшие разовые превышения, так что можно жить.
    - Ошибки регулярные — подключите Workers Paid (5 $/мес) в **Workers & Pages → Plans**. Код менять не нужно.
+   - Ошибки только на `/api/auth/login` и `/api/auth/register` — можно уменьшить стоимость хэша переменной `PASSWORD_ITERATIONS` (по умолчанию 100 000, минимум 10 000). Старые пароли продолжат работать: число итераций хранится в хэше.
 
 ## 11. Автодеплой из GitHub (по желанию)
 
@@ -154,7 +168,7 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 
 ## 12. Свой домен (по желанию)
 
-**Workers & Pages → family-memory-ai → Settings → Domains & Routes → Add → Custom domain**, например `memory.example.com`. Домен должен быть подключён к Cloudflare, сертификат выпустится сам. Не забудьте защитить его через Access (примечание к шагу 8).
+**Workers & Pages → family-memory-ai → Settings → Domains & Routes → Add → Custom domain**, например `memory.example.com`. Домен должен быть подключён к Cloudflare, сертификат выпустится сам. Добавьте его адрес возврата в OAuth-клиент Google (шаг 8).
 
 ## 13. Изменение схемы базы
 
@@ -177,7 +191,10 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 
 | Угроза | Защита | Где |
 | --- | --- | --- |
-| Посторонние на сайте | Cloudflare Access пускает только emails из списка. Приложение дополнительно проверяет подпись токена Access (ключи Cloudflare, issuer, AUD, срок действия) в каждом запросе, поэтому подделка или обход незащищённого адреса дают 403 | `src/lib/access.ts`, `src/middleware.ts`, `src/lib/auth.ts` |
+| Подбор паролей | PBKDF2-SHA256 (100 000 итераций) с солью, лимит попыток по IP и email, honeypot, Cloudflare Turnstile (ключи `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`) | `src/lib/password.ts`, `src/app/api/auth/*` |
+| Подделка входа через Google | Authorization Code + PKCE, `state` в подписанной cookie, проверка подписи id_token, issuer, audience и `email_verified` | `src/lib/google.ts` |
+| Чужой пароль на вашем email | Вход через Google с тем же email сбрасывает пароль, заданный при регистрации без подтверждения адреса | `src/app/api/auth/google/callback/route.ts` |
+| Архивы без регистрации | Хранятся только в IndexedDB браузера; service worker отвечает на их запросы сам, на сервер они не уходят | `src/lib/local/` |
 | Доступ к чужим архивам | Каждый API-запрос проверяет, что профиль принадлежит вошедшему пользователю | `assertPersonAccess` |
 | CSRF | Изменяющие запросы проверяют `Origin` и `Sec-Fetch-Site` | `src/lib/security/origin.ts` |
 | SQL-инъекции | Только Prisma с параметризованными запросами, сырого SQL нет | — |
@@ -186,12 +203,10 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 | Расходы и злоупотребления | Лимиты: новая отправка в Telegram 5 раз за 10 мин, расшифровка 30 раз в час, загрузка 200 записей в час (счётчики в D1) | `src/lib/security/rate-limit.ts` |
 | Утечка файлов | R2 приватный, файлы отдаются только через API | `src/lib/storage/r2.ts` |
 
-Режим входа по паролю (локальная разработка или Node-хостинг) дополнительно защищён лимитом попыток, honeypot-полем, Cloudflare Turnstile (ключи `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`) и bcrypt.
-
 ### Что включить в панели
 
-1. **Двухфакторная аутентификация** на аккаунте Cloudflare (**My Profile → Authentication**). Кто управляет аккаунтом, тот управляет и базой, и списком допуска.
-2. **Zero Trust → Settings → Authentication → Global session timeout**: например, 1 месяц, чтобы родственникам не вводить код каждый день. Слишком долгий срок не ставьте.
+1. **Двухфакторная аутентификация** на аккаунте Cloudflare (**My Profile → Authentication**) и в Google Cloud. Кто управляет аккаунтом, тот управляет базой и OAuth-клиентом.
+2. **Turnstile** против ботов на регистрации: **Turnstile → Add widget**, затем `npx wrangler secret put TURNSTILE_SECRET_KEY` и `TURNSTILE_SITE_KEY` в `vars`.
 3. **SSL/TLS → Edge Certificates** (если есть свой домен): `Always Use HTTPS: On`, `Minimum TLS Version: 1.2`.
 4. **API-токены** для CI: шаблон *Edit Cloudflare Workers*, только ваш аккаунт. Global API Key нигде не используйте.
 
@@ -222,14 +237,14 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 
 | Ограничение | Значение | Что сделано / что учесть |
 | --- | --- | --- |
-| Процессорное время | 10 мс на запрос | Нет хэширования паролей; аудио в Telegram — без ZIP. См. шаг 10 |
-| Внешние запросы | 50 на запрос | Telegram: 5 файлов за запрос, страница сама повторяет запросы, пока всё не уйдёт |
+| Процессорное время | 10 мс на запрос | PBKDF2 ~20 мс только при входе (`PASSWORD_ITERATIONS`); аудио в Telegram — без ZIP. См. шаг 10 |
+| Внешние запросы и запросы к D1 | 50 на запрос | Telegram: 5 файлов за запрос, страница сама повторяет запросы, пока всё не уйдёт. Перенос архива с устройства в аккаунт идёт отдельными запросами |
 | Размер тела запроса | 100 МБ | `VOICE_MAX_MB=90`: около 15 мин WAV 48 кГц моно в одной записи |
 | Память | 128 МБ | Большие файлы в Telegram — кусками по 30 МБ; аудио на сайте отдаётся по диапазонам (Range) |
 | Запросов в день | 100 000 | Для семейного архива с запасом |
 | Размер сборки | 3 МБ (gzip) | Сейчас ~2,5 МБ |
 
-**Скачивание ZIP-архивов** на экране «Экспорт и ИИ» на бесплатном тарифе, скорее всего, будет падать: сборка ZIP занимает сотни миллисекунд процессора. Используйте отправку в Telegram — каждая запись приходит отдельным файлом. Отдельные записи по-прежнему скачиваются с экрана «Голосовой архив». Если ZIP нужен, подключите Workers Paid.
+**Скачивание ZIP-архивов** на экране «Экспорт и ИИ» на бесплатном тарифе, скорее всего, будет падать: сборка ZIP занимает сотни миллисекунд процессора. Используйте отправку в Telegram — каждая запись приходит отдельным файлом. Отдельные записи по-прежнему скачиваются с экрана «Голосовой архив». Если ZIP нужен, подключите Workers Paid. Для архивов без регистрации ZIP собирается в браузере, этого ограничения у них нет.
 
 ## Шпаргалка команд
 

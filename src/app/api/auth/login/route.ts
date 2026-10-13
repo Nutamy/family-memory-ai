@@ -1,19 +1,13 @@
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { HttpError } from "@/lib/auth";
-import { isAccessMode } from "@/lib/access";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
+import { dummyPasswordHash, verifyPassword } from "@/lib/password";
 import { guardPublicForm } from "@/lib/security/form-guard";
 import { clientIp, rateLimit } from "@/lib/security/rate-limit";
 import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
-// Compared against when the email is unknown, so response time does not reveal registered emails.
-let dummyHash: Promise<string> | null = null;
-
 export const POST = route(async (req) => {
-  // Under Cloudflare Access there are no app passwords at all.
-  if (isAccessMode()) throw new HttpError(404, "Вход выполняется через Cloudflare Access");
   const body = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 254);
   const password = String(body.password ?? "");
@@ -24,9 +18,13 @@ export const POST = route(async (req) => {
   await guardPublicForm(req, body);
 
   const user = email ? await db.user.findUnique({ where: { email } }) : null;
-  const hash = user?.passwordHash ?? (await (dummyHash ??= bcrypt.hash("timing-equalizer", 10)));
-  const ok = password.length <= 200 && (await bcrypt.compare(password, hash));
-  if (!user?.passwordHash || !ok) throw new HttpError(401, "Неверный email или пароль");
+  const hash = user?.passwordHash ?? (await dummyPasswordHash());
+  const ok = password.length <= 200 && (await verifyPassword(password, hash));
+  if (!user?.passwordHash || !ok) {
+    // Google-only accounts have no password; say so instead of a generic failure.
+    if (user && !user.passwordHash && user.provider === "google") throw new HttpError(401, "Этот email зарегистрирован через Google — нажмите «Войти через Google»");
+    throw new HttpError(401, "Неверный email или пароль");
+  }
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email }), sessionCookieOptions);

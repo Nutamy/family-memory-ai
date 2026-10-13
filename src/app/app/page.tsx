@@ -1,13 +1,11 @@
-import { Plus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { DecorScatter } from "@/components/decor";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { ArchiveCard, NewArchiveCard } from "@/components/views/archive-card";
 import { requireUser } from "@/lib/auth";
 import { loadProgressInput } from "@/lib/data";
 import { db } from "@/lib/db";
 import { computeProgress } from "@/lib/progress";
-import { formatDate, formatMinutes } from "@/lib/utils";
 
 export const metadata = { title: "Мои архивы" };
 
@@ -28,51 +26,20 @@ export default async function ArchivesPage() {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {persons.map((p, i) => (
-            <Link key={p.id} href={`/app/p/${p.id}`} className="paper-card group block p-6 transition-transform hover:-translate-y-1">
-              <div className="flex items-center gap-4">
-                <div className="size-16 shrink-0 rotate-[-3deg] rounded-xl bg-card p-1 shadow-device">
-                  {p.photoKey ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/api/persons/${p.id}/photo`} alt="" className="size-full rounded-lg object-cover" />
-                  ) : (
-                    <div className="grid size-full place-items-center rounded-lg bg-mist text-forest/60">
-                      <UserRound className="size-7" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="truncate text-2xl font-semibold group-hover:text-primary">
-                    {p.firstName} {p.lastName}
-                  </h2>
-                  <p className="truncate text-sm text-muted-foreground">{p.profession || "Профиль"}</p>
-                </div>
-              </div>
-              <div className="mt-6 flex items-center gap-3">
-                <Progress value={progress[i].overall.percent} />
-                <span className="text-sm font-bold">{progress[i].overall.percent}%</span>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {formatMinutes(progress[i].recordedSeconds)} мин голоса · обновлено {formatDate(p.updatedAt)}
-              </p>
-            </Link>
+            <ArchiveCard key={p.id} person={p} progress={progress[i]} />
           ))}
-          <Link
-            href="/app/new"
-            className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-foreground/15 p-6 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-          >
-            <span className="grid size-14 place-items-center rounded-full bg-primary text-white shadow-lg">
-              <Plus className="size-6" />
-            </span>
-            <span className="font-serif text-xl font-semibold">Создать профиль</span>
-          </Link>
+          <NewArchiveCard href="/app/new" />
         </div>
-        {persons.length > 0 && (
-          <div className="mt-10">
+        <div className="mt-10 flex flex-wrap items-center gap-4">
+          {persons.length > 0 && (
             <Button asChild variant="secondary" arrow>
               <Link href="/continue">Продолжить заполнение</Link>
             </Button>
-          </div>
-        )}
+          )}
+          <Link href="/local" className="text-sm font-semibold text-muted-foreground hover:text-primary">
+            Архивы на этом устройстве →
+          </Link>
+        </div>
       </div>
     </main>
   );

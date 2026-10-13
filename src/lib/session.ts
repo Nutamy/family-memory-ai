@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 export const SESSION_COOKIE = "fm_session";
 const MAX_AGE = 60 * 60 * 24 * 30;
 
-function secret() {
+export function authSecretKey() {
   const s = process.env.AUTH_SECRET;
   if (!s && process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is not set");
   return new TextEncoder().encode(s || "dev-insecure-secret-change-me");
@@ -21,13 +21,13 @@ export async function createSessionToken(payload: SessionPayload): Promise<strin
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
-    .sign(secret());
+    .sign(authSecretKey());
 }
 
 export async function verifySessionToken(token: string | undefined): Promise<SessionPayload | null> {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, authSecretKey());
     if (!payload.sub) return null;
     return { sub: payload.sub, email: String(payload.email ?? "") };
   } catch {

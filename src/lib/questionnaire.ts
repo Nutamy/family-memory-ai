@@ -542,9 +542,19 @@ export function chapterOfModule(slug: string): ChapterDef | undefined {
   return CHAPTERS.find((c) => c.modules.includes(slug));
 }
 
+/** Ids of archives kept in the browser (IndexedDB) carry this prefix; the service worker serves their API. */
+export const LOCAL_ID_PREFIX = "loc_";
+
+export const isLocalId = (personId: string) => personId.startsWith(LOCAL_ID_PREFIX);
+
+/** Root of a person's pages: /local/p/… for on-device archives, /app/p/… for account archives. */
+export function personBase(personId: string): string {
+  return `${isLocalId(personId) ? "/local" : "/app"}/p/${personId}`;
+}
+
 export function moduleHref(personId: string, slug: string): string {
   const m = getModule(slug);
-  const base = `/app/p/${personId}`;
+  const base = personBase(personId);
   switch (m?.kind) {
     case "tests":
       return `${base}/tests`;

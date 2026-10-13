@@ -1,22 +1,19 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { isAccessMode } from "@/lib/access";
+import { isGoogleEnabled } from "@/lib/google";
 import { turnstileSiteKey } from "@/lib/security/form-guard";
 
-// Rendered per request: Turnstile keys and the demo hint come from runtime env.
+// Rendered per request: Turnstile and Google settings come from runtime env.
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Регистрация" };
 
 export default function RegisterPage() {
-  // Cloudflare Access has already signed the visitor in.
-  if (isAccessMode()) redirect("/app");
   return (
-    <AuthShell title="Создать аккаунт" subtitle="В одном аккаунте можно вести архивы нескольких членов семьи.">
+    <AuthShell title="Создать аккаунт" subtitle="Архивы хранятся в защищённой базе и доступны с любого устройства.">
       <Suspense>
-        <AuthForm mode="register" turnstileSiteKey={turnstileSiteKey()} />
+        <AuthForm mode="register" turnstileSiteKey={turnstileSiteKey()} google={isGoogleEnabled()} />
       </Suspense>
     </AuthShell>
   );

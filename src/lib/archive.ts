@@ -1,19 +1,22 @@
-import "server-only";
 import JSZip from "jszip";
 import type { PersonBundle } from "./data";
 import { audioFileName, buildProfileJson } from "./export";
 import { buildPersonaPrompt } from "./integrations/persona";
 import { buildReport } from "./report";
-import { storage } from "./storage";
 import { formatDuration, slugifyFile } from "./utils";
 
 /**
  * Builds the export archive.
  * audio — all recordings (WAV + MP3) with metadata and transcripts, ready for ElevenLabs.
  * full  — the above plus profile.json, persona prompt and photo.
- * formats — limit audio formats (Telegram delivery uses MP3 only to stay under 50 MB).
+ * formats — limit audio formats.
+ * read — loads a stored file by key: server storage, or IndexedDB for on-device archives.
  */
-export async function buildArchiveZip(bundle: PersonBundle, opts: { full: boolean; formats?: ("wav" | "mp3")[] }) {
+export async function buildArchiveZip(
+  bundle: PersonBundle,
+  opts: { full: boolean; formats?: ("wav" | "mp3")[] },
+  read: (key: string) => Promise<Uint8Array | Blob>,
+) {
   const formats = opts.formats ?? ["wav", "mp3"];
   const zip = new JSZip();
   const meta = [];
@@ -26,7 +29,7 @@ export async function buildArchiveZip(bundle: PersonBundle, opts: { full: boolea
       if (!key || !formats.includes(fmt)) continue;
       try {
         const name = audioFileName(v, i, fmt);
-        zip.file(name, await storage().get(key));
+        zip.file(name, await read(key));
         files[fmt] = name;
       } catch {
         // Missing file on disk — keep exporting the rest.
@@ -42,7 +45,7 @@ export async function buildArchiveZip(bundle: PersonBundle, opts: { full: boolea
     zip.file("persona-prompt.md", buildPersonaPrompt(bundle, buildReport(bundle)));
     if (bundle.photoKey) {
       try {
-        zip.file(`photo.${bundle.photoKey.split(".").pop()}`, await storage().get(bundle.photoKey));
+        zip.file(`photo.${bundle.photoKey.split(".").pop()}`, await read(bundle.photoKey));
       } catch {}
     }
   }

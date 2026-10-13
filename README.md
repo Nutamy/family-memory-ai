@@ -44,7 +44,8 @@ npm run dev                 # http://localhost:3000
 - **Personality Report**: портрет личности, Big Five (радар), темперамент и MBTI, карта жизненных приоритетов, стиль общения, эмоциональная палитра, облако тегов. Печать в PDF.
 - **Прогресс**: общий процент, прогресс по главам и разделам, минуты записи. Автосохранение каждого ответа; «Продолжить заполнение» открывает последний раздел.
 - **Экспорт**: ZIP всех записей (WAV + MP3 + расшифровки + metadata.json), JSON профиля, полный архив (+ фото и промпт персоны). Экран подготовки для ElevenLabs: минуты, качество звука, количество слов, готовность к Instant/Professional Voice Clone.
-- **Светлая и тёмная тема**, адаптивная вёрстка, вход по email и паролю.
+- **Светлая и тёмная тема**, адаптивная вёрстка.
+- **Два режима хранения**: без регистрации — в браузере, с аккаунтом (email + пароль или Google) — в базе. Архив с устройства переносится в аккаунт одной кнопкой.
 
 ## Структура
 
@@ -63,6 +64,7 @@ src/
     report.ts            Personality Report (правила, без внешних сервисов)
     export.ts            JSON-профиль и статистика экспорта
     storage/             драйверы хранения файлов (local, R2, S3-заготовка)
+    local/               архивы без регистрации: IndexedDB, API в service worker, перенос в аккаунт
     security/            лимит попыток, CSRF-проверка Origin, Turnstile/honeypot, сигнатуры файлов
     telegram-delivery.ts отправка аудио в Telegram частями до 50 МБ
     integrations/        OpenAI, Ollama, ElevenLabs, аватары, промпт персоны
@@ -74,6 +76,8 @@ storage/                 аудио и фото (локальное хранил
 | Метод | Путь | Назначение |
 | --- | --- | --- |
 | POST | `/api/auth/register`, `/api/auth/login`, `/api/auth/logout` | аккаунт и сессия (JWT в httpOnly-cookie) |
+| GET | `/api/auth/google`, `/api/auth/google/callback` | вход через Google |
+| POST | `/api/persons/import` | перенос архива с устройства: профиль, ответы, тесты, любимое |
 | GET/POST | `/api/persons` | список / создание профиля |
 | GET/PATCH/DELETE | `/api/persons/:id` | профиль |
 | POST/GET/DELETE | `/api/persons/:id/photo` | фотография |
@@ -102,18 +106,18 @@ storage/                 аудио и фото (локальное хранил
 На Cloudflare используется R2 через привязку `BUCKET` (`STORAGE_DRIVER=r2`, выбирается автоматически при наличии привязки).
 Для S3 реализуйте `S3StorageDriver` через `@aws-sdk/client-s3`, задайте `STORAGE_DRIVER=s3` и переменные `S3_*`. Миграция существующих файлов — копирование папки `storage/` в бакет с теми же ключами.
 
-## Авторизация
+## Авторизация и где хранятся данные
 
-Два режима:
+На главной и на `/start` человек выбирает режим:
 
-- **Cloudflare Access** (в бою на Cloudflare): вход по одноразовому коду из письма для emails из вашего списка. Приложение проверяет подписанный токен Access и само создаёт пользователя по email. Паролей нет. Включается переменной `CF_ACCESS_TEAM_DOMAIN` (и желательно `CF_ACCESS_AUD`) (`src/lib/access.ts`, инструкция — [docs/cloudflare.md](docs/cloudflare.md), шаг 8).
-- **Email + пароль** (локально и на Node-хостинге): bcrypt, не короче 8 символов, подписанная JWT-cookie (`jose`).
+- **Без регистрации** (`/local`): архив живёт в IndexedDB браузера. Service worker (`src/lib/local/sw.ts` → `public/sw.js`) отвечает на `/api/persons/loc_…` теми же ответами, что и сервер, поэтому компоненты, плееры и ссылки на скачивание работают без изменений. Экспорт JSON и ZIP собирается в браузере. Недоступны автоматическая расшифровка и Telegram — им нужны файлы на сервере. Кнопка «В аккаунт» на `/local` переносит архив целиком (`src/lib/local/upload.ts`, `POST /api/persons/import`).
+- **С аккаунтом** (`/app`): регистрация на сайте по email и паролю (PBKDF2 через WebCrypto, `src/lib/password.ts`) или «Войти через Google» (OAuth 2.0 + PKCE, `src/lib/google.ts`, переменные `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`). Оба способа выдают одну и ту же подписанную JWT-cookie (`src/lib/session.ts`). Настройка Google — [docs/cloudflare.md](docs/cloudflare.md), шаг 8.
 
- В модели `User` есть поля `provider` и `providerId` под Google, Microsoft и Apple: достаточно добавить OAuth-callback, который создаёт пользователя и вызывает `createSessionToken` (`src/lib/session.ts`). Для полноценной OAuth-интеграции удобно подключить Auth.js.
+Сброс пароля по почте пока не реализован: для него нужен почтовый сервис.
 
 ## Безопасность
 
-Cloudflare Access с проверкой подписи в каждом запросе, проверка `Origin` у всех изменяющих запросов (CSRF), лимиты частоты (счётчики в БД), проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. В режиме паролей добавляются лимит попыток входа, honeypot и Cloudflare Turnstile. Подробности — в [docs/cloudflare.md](docs/cloudflare.md#безопасность).
+Проверка `Origin` у всех изменяющих запросов (CSRF), лимиты частоты (счётчики в БД), лимит попыток входа, honeypot и Cloudflare Turnstile на формах, PKCE и проверка id_token для Google, проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. Подробности — в [docs/cloudflare.md](docs/cloudflare.md#безопасность).
 
 ## Интеграции ИИ
 

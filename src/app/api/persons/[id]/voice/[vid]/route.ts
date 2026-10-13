@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { assertPersonAccess, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
 import { toVoiceDTO } from "@/lib/dto";
 import { storage } from "@/lib/storage";
+import { voicePatchSchema } from "@/lib/schemas";
 import { slugifyFile } from "@/lib/utils";
 
 async function own(personId: string, vid: string) {
@@ -47,13 +47,9 @@ export const GET = route<{ id: string; vid: string }>(async (req, { id, vid }) =
   return new Response(new Uint8Array(data), { headers: { ...headers, "Content-Length": String(data.length) } });
 });
 
-const patchSchema = z
-  .object({ title: z.string().trim().min(1).max(300), topic: z.string().trim().max(100), transcription: z.string().max(200_000) })
-  .partial();
-
 export const PATCH = route<{ id: string; vid: string }>(async (req, { id, vid }) => {
   await own(id, vid);
-  const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));
+  const parsed = voicePatchSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) throw new HttpError(400, "Некорректные данные");
   const r = await db.voiceRecord.update({ where: { id: vid }, data: parsed.data });
   return NextResponse.json(toVoiceDTO(r));

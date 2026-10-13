@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getSessionUserId, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
+import { personCreateSchema } from "@/lib/schemas";
 
 async function userId() {
   const id = await getSessionUserId();
@@ -15,15 +15,9 @@ export const GET = route(async () => {
   return NextResponse.json(persons);
 });
 
-const createSchema = z.object({
-  firstName: z.string().trim().min(1, "Укажите имя").max(100),
-  lastName: z.string().trim().max(100).default(""),
-  middleName: z.string().trim().max(100).default(""),
-});
-
 export const POST = route(async (req) => {
   const uid = await userId();
-  const parsed = createSchema.safeParse(await req.json().catch(() => ({})));
+  const parsed = personCreateSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) throw new HttpError(400, parsed.error.issues[0]?.message ?? "Некорректные данные");
   const person = await db.person.create({ data: { ...parsed.data, userId: uid, lastSection: "basic" } });
   return NextResponse.json(person, { status: 201 });

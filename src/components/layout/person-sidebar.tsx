@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Progress, ProgressRing } from "@/components/ui/progress";
 import type { ProgressSummary } from "@/lib/progress";
-import { CHAPTERS, getModule, moduleHref } from "@/lib/questionnaire";
+import { CHAPTERS, getModule, moduleHref, personBase } from "@/lib/questionnaire";
 import { cn, formatMinutes } from "@/lib/utils";
 import { ModuleIcon } from "./module-icon";
 
@@ -15,7 +15,7 @@ export function PersonSidebar({ personId, name, progress }: { personId: string; 
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
 
-  const base = `/app/p/${personId}`;
+  const base = personBase(personId);
   const link = (href: string, exact = false) => (exact ? pathname === href : pathname.startsWith(href));
 
   const nav = (

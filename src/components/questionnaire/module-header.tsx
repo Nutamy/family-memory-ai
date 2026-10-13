@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { chapterOfModule, getModule, moduleHref, nextModule, type ModuleDef } from "@/lib/questionnaire";
+import { chapterOfModule, getModule, moduleHref, nextModule, personBase, type ModuleDef } from "@/lib/questionnaire";
 import type { Progress as P } from "@/lib/progress";
 
 export function ModuleHeader({ module: m, progress }: { module: ModuleDef; progress?: P }) {
@@ -44,7 +44,7 @@ export function NextModuleLink({ personId, slug }: { personId: string; slug: str
         <>
           <p className="text-muted-foreground">Это последний раздел. Посмотрите, что получилось:</p>
           <Button asChild size="lg">
-            <Link href={`/app/p/${personId}/report`}>
+            <Link href={`${personBase(personId)}/report`}>
               Отчёт о личности <ArrowRight />
             </Link>
           </Button>

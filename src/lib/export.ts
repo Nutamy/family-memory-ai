@@ -1,4 +1,3 @@
-import "server-only";
 import type { PersonBundle } from "./data";
 import { buildPersonaPrompt } from "./integrations/persona";
 import { assessQuality, QUALITY_LABELS } from "./quality";

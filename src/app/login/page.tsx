@@ -1,11 +1,10 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { isAccessMode } from "@/lib/access";
+import { isGoogleEnabled } from "@/lib/google";
 import { turnstileSiteKey } from "@/lib/security/form-guard";
 
-// Rendered per request: Turnstile keys and the demo hint come from runtime env.
+// Rendered per request: Turnstile/Google settings and the demo hint come from runtime env.
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Вход" };
@@ -14,12 +13,10 @@ export const metadata = { title: "Вход" };
 const showDemo = () => process.env.NODE_ENV !== "production" || process.env.SHOW_DEMO_LOGIN === "1";
 
 export default function LoginPage() {
-  // Cloudflare Access has already signed the visitor in.
-  if (isAccessMode()) redirect("/app");
   return (
     <AuthShell title="С возвращением" subtitle="Войдите, чтобы продолжить заполнение архива.">
       <Suspense>
-        <AuthForm mode="login" turnstileSiteKey={turnstileSiteKey()} />
+        <AuthForm mode="login" turnstileSiteKey={turnstileSiteKey()} google={isGoogleEnabled()} />
       </Suspense>
       {showDemo() && (
         <p className="mt-6 rounded-2xl bg-mist px-4 py-3 text-center text-sm text-forest">

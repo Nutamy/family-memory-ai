@@ -18,11 +18,14 @@ model User {
   email        String   @unique
   passwordHash String?
   name         String?
-  // Reserved for OAuth (google | microsoft | apple); "credentials" for email+password.
+  // "credentials" for email+password, "google" once the account signed in with Google.
   provider     String   @default("credentials")
+  // Google account id ("sub" claim).
   providerId   String?
   createdAt    DateTime @default(now())
   persons      Person[]
+
+  @@index([provider, providerId])
 }
 
 model Person {

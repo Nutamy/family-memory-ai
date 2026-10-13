@@ -20,14 +20,12 @@
   // Private bucket for audio and photos: files are served only through authorized API routes.
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "family-memory-files" }],
 
-  // Non-secret settings. Secrets (TELEGRAM_BOT_TOKEN, ...) go through `wrangler secret put`.
+  // Non-secret settings. Secrets (AUTH_SECRET, GOOGLE_CLIENT_SECRET, TELEGRAM_BOT_TOKEN, ...) go through `wrangler secret put`.
   "vars": {
     "STORAGE_DRIVER": "r2",
-    // Sign-in through Cloudflare Access (docs/cloudflare.md, step 8). Both values are public.
-    // Team domain: "<team>.cloudflareaccess.com"; AUD: the Access application's audience tag
-    // (optional but recommended: without it tokens of any app in this team are accepted).
-    "CF_ACCESS_TEAM_DOMAIN": "misty-rain-abed.cloudflareaccess.com",
-    "CF_ACCESS_AUD": "",
+    // "Sign in with Google" (docs/cloudflare.md, step 8): the OAuth client id is public;
+    // GOOGLE_CLIENT_SECRET and AUTH_SECRET go through `wrangler secret put`.
+    "GOOGLE_CLIENT_ID": "",
     // Telegram: each recording is one document; bigger files are cut into chunks of this size.
     // 30 MB keeps memory well under the 128 MB isolate limit; 5 documents per request
     // stays within the Free plan's 50 subrequests.

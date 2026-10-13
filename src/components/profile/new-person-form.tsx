@@ -5,8 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { api } from "@/lib/client";
+import { personBase } from "@/lib/questionnaire";
 
-export function NewPersonForm() {
+/** endpoint: /api/persons for the account, /api/local/persons for an on-device archive. */
+export function NewPersonForm({ endpoint = "/api/persons" }: { endpoint?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -16,8 +18,8 @@ export function NewPersonForm() {
     setLoading(true);
     setError(null);
     try {
-      const person = await api<{ id: string }>("/api/persons", { method: "POST", json: Object.fromEntries(new FormData(e.currentTarget)) });
-      router.push(`/app/p/${person.id}/m/basic`);
+      const person = await api<{ id: string }>(endpoint, { method: "POST", json: Object.fromEntries(new FormData(e.currentTarget)) });
+      router.push(`${personBase(person.id)}/m/basic`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка");
       setLoading(false);

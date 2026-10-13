@@ -1,11 +1,12 @@
 import { AudioLines, BookHeart, Brain, Download, Gem, Mic, Play, ShieldCheck, Sparkles as SparklesIcon } from "lucide-react";
 import Link from "next/link";
 import { Berries, Bird, BrushDivider, Butterfly, Illustration, Leaf, Logo, Sparkles, Sprig } from "@/components/decor";
+import { ContinueButton } from "@/components/layout/continue-button";
 import { Reveal } from "@/components/layout/reveal";
+import { StorageChoice } from "@/components/layout/storage-choice";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getSessionUserId } from "@/lib/auth";
-import { cloudflareEnv } from "@/lib/cloudflare";
 import { CHAPTERS } from "@/lib/questionnaire";
 
 const FEATURES = [
@@ -17,7 +18,6 @@ const FEATURES = [
 
 export default async function HomePage() {
   const loggedIn = !!(await getSessionUserId());
-  const onCloudflare = !!cloudflareEnv()?.DB;
 
   return (
     <main className="overflow-hidden">
@@ -59,19 +59,17 @@ export default async function HomePage() {
           </Reveal>
           <Reveal delay={0.2} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
-              <Link href={loggedIn ? "/app/new" : "/register"}>
+              <Link href={loggedIn ? "/app/new" : "/start"}>
                 Создать профиль <span aria-hidden>→</span>
               </Link>
             </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/continue">
-                Продолжить заполнение <span aria-hidden>→</span>
-              </Link>
-            </Button>
+            <ContinueButton loggedIn={loggedIn} size="lg" variant="secondary">
+              Продолжить заполнение <span aria-hidden>→</span>
+            </ContinueButton>
           </Reveal>
           <Reveal delay={0.3}>
             <p className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <ShieldCheck className="size-4 text-grass" /> Прогресс сохраняется автоматически — можно вернуться в любой момент
+              <ShieldCheck className="size-4 text-grass" /> Можно без регистрации — архив останется на вашем устройстве
             </p>
           </Reveal>
 
@@ -226,6 +224,19 @@ export default async function HomePage() {
         <BrushDivider tone="blue" className="rotate-180" />
       </section>
 
+      {/* Storage modes */}
+      <section id="storage" className="relative py-20">
+        <div className="container max-w-5xl">
+          <Reveal>
+            <p className="eyebrow">Ваши данные — ваш выбор</p>
+            <h2 className="mt-3 max-w-2xl text-4xl font-semibold sm:text-5xl">Храните там, где вам спокойнее</h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <StorageChoice loggedIn={loggedIn} className="mt-10" />
+          </Reveal>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="relative py-24 text-center">
         <Sparkles className="absolute left-[12%] top-10 w-16" />
@@ -240,7 +251,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex justify-center">
               <Button asChild size="lg">
-                <Link href={loggedIn ? "/app/new" : "/register"}>
+                <Link href={loggedIn ? "/app/new" : "/start"}>
                   Создать профиль <span aria-hidden>→</span>
                 </Link>
               </Button>
@@ -252,11 +263,7 @@ export default async function HomePage() {
       <footer className="border-t py-8">
         <div className="container flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
           <Logo compact />
-          <p>
-            {onCloudflare
-              ? "Данные хранятся в вашем аккаунте Cloudflare: база D1 и закрытое хранилище R2."
-              : "Данные хранятся у вас: локальная база SQLite и файлы на вашем сервере."}
-          </p>
+          <p>Без регистрации — только в вашем браузере. С аккаунтом — в защищённой базе.</p>
         </div>
       </footer>
     </main>

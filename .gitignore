@@ -7,6 +7,8 @@ out
 /storage/*
 !/storage/.gitkeep
 next-env.d.ts
+# Built from src/lib/local/sw.ts by scripts/build-sw.ts
+/public/sw.js
 *.tsbuildinfo
 .DS_Store
 

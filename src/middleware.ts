@@ -1,30 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ACCESS_COOKIE, accessTokenFrom, isAccessMode, verifyAccessToken } from "@/lib/access";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export async function middleware(req: NextRequest) {
-  if (isAccessMode()) {
-    // Access already stopped strangers at the edge; this catches a hostname left unprotected.
-    const identity = await verifyAccessToken(accessTokenFrom(req.headers, req.cookies.get(ACCESS_COOKIE)?.value));
-    if (identity) return NextResponse.next();
-    return new NextResponse("Нет доступа. Откройте сайт по адресу, защищённому Cloudflare Access.", {
-      status: 403,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value);
   if (session) return NextResponse.next();
-
-  // API routes authorize themselves (see assertPersonAccess); middleware is kept off
-  // them so large audio uploads are not buffered here.
-  if (req.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Требуется вход" }, { status: 401 });
-  }
   const url = req.nextUrl.clone();
   url.pathname = "/login";
   url.search = `?next=${encodeURIComponent(req.nextUrl.pathname)}`;
   return NextResponse.redirect(url);
 }
 
+// API routes authorize themselves (see assertPersonAccess) and are kept off the middleware,
+// so large audio uploads are not buffered here. /local works without an account.
 export const config = { matcher: ["/app/:path*"] };

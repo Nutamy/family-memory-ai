@@ -1,7 +1,7 @@
 // Seeds the question catalogue and a demo account with a filled-in example person.
 // Run: npm run db:seed   (idempotent: questions are upserted, the demo person is recreated)
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../src/lib/password";
 import { ALL_QUESTIONS, TAG_COLORS } from "../src/lib/questionnaire";
 import { scoreTest } from "../src/lib/tests";
 import { BIG_FIVE_ITEMS } from "../src/lib/tests/bigfive";
@@ -169,7 +169,7 @@ async function main() {
 
   const user = await db.user.upsert({
     where: { email: DEMO_EMAIL },
-    create: { email: DEMO_EMAIL, name: "Демо", passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10) },
+    create: { email: DEMO_EMAIL, name: "Демо", passwordHash: await hashPassword(DEMO_PASSWORD) },
     update: {},
   });
   await db.person.deleteMany({ where: { userId: user.id, firstName: "Анна", lastName: "Соколова" } });
