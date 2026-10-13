@@ -34,9 +34,9 @@ export function ExportView({
   const api = `/api/persons/${personId}/export`;
 
   const readiness = [
-    { label: "Instant Voice Clone", target: ELEVENLABS_TARGETS.instantMinutes, hint: "быстрый клон по короткой записи" },
-    { label: "Professional Voice Clone", target: ELEVENLABS_TARGETS.professionalMinutes, hint: "минимум для профессионального клона" },
-    { label: "Идеальный датасет", target: ELEVENLABS_TARGETS.idealMinutes, hint: "максимальная схожесть голоса" },
+    { label: "Быстрый клон голоса", target: ELEVENLABS_TARGETS.instantMinutes, hint: "по короткой записи" },
+    { label: "Профессиональный клон голоса", target: ELEVENLABS_TARGETS.professionalMinutes, hint: "минимальный объём" },
+    { label: "Идеальный объём записей", target: ELEVENLABS_TARGETS.idealMinutes, hint: "максимальная схожесть голоса" },
   ];
 
   return (
@@ -45,7 +45,7 @@ export function ExportView({
         <p className="eyebrow">Подготовка данных</p>
         <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Экспорт и ИИ</h1>
         <p className="mt-2 max-w-2xl text-lg text-muted-foreground">
-          Скачайте архив целиком или подготовьте датасет для голосового клона ElevenLabs и цифровой персоны.
+          Скачайте архив целиком или подготовьте записи, из которых можно воссоздать голос и цифровую копию личности.
         </p>
       </div>
 
@@ -74,9 +74,9 @@ export function ExportView({
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {[
-            { href: `${api}/zip?type=audio`, icon: FileArchive, title: "ZIP всех записей", text: "WAV + MP3, расшифровки и metadata.json", variant: "primary" as const },
-            { href: `${api}/json`, icon: FileJson, title: "JSON профиля", text: "Все ответы, тесты, воспоминания, отчёт", variant: "secondary" as const },
-            { href: `${api}/zip?type=full`, icon: FileArchive, title: "Полный архив", text: "Аудио, profile.json, фото и промпт персоны", variant: "outline" as const },
+            { href: `${api}/zip?type=audio`, icon: FileArchive, title: "Все записи голоса", text: "WAV и MP3, расшифровки и описание файлов — одним ZIP-архивом", variant: "primary" as const },
+            { href: `${api}/json`, icon: FileJson, title: "Данные профиля", text: "Все ответы, тесты, воспоминания и отчёт в формате JSON", variant: "secondary" as const },
+            { href: `${api}/zip?type=full`, icon: FileArchive, title: "Полный архив", text: "Аудио, данные профиля, фото и описание личности для нейросети", variant: "outline" as const },
           ].map((d) => (
             <div key={d.title} className="flex flex-col rounded-3xl bg-cream/[.07] p-5">
               <d.icon className="size-7 text-honey" />
@@ -110,9 +110,9 @@ export function ExportView({
 
       <Card>
         <CardHeader>
-          <CardTitle>Готовность к ElevenLabs Voice Clone</CardTitle>
+          <CardTitle>Хватит ли записей, чтобы воссоздать голос</CardTitle>
           <CardDescription>
-            Ориентиры по объёму чистой речи. Частота дискретизации записей: {stats.sampleRates.length ? stats.sampleRates.map((r) => `${r / 1000} кГц`).join(", ") : "—"}
+            Ориентиры по объёму чистой речи для сервисов клонирования голоса. Частота дискретизации записей: {stats.sampleRates.length ? stats.sampleRates.map((r) => `${r / 1000} кГц`).join(", ") : "—"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -139,14 +139,14 @@ export function ExportView({
         <Card>
           <CardHeader>
             <CardTitle>Интеграции</CardTitle>
-            <CardDescription>Подключаются ключами в .env — архитектура уже готова (src/lib/integrations)</CardDescription>
+            <CardDescription>Внешние сервисы, которые подключает администратор сайта</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: AudioLines, name: "ElevenLabs Voice Clone", on: !!integrations.voiceClone, env: "ELEVENLABS_API_KEY" },
-              { icon: Bot, name: "OpenAI (персона и Whisper)", on: integrations.llm === "openai", env: "OPENAI_API_KEY" },
-              { icon: Cpu, name: "Локальная LLM через Ollama", on: integrations.llm === "ollama", env: "OLLAMA_BASE_URL" },
-              { icon: Clapperboard, name: "Анимированный аватар", on: false, env: "AVATAR_PROVIDER" },
+              { icon: AudioLines, name: "Клонирование голоса", on: !!integrations.voiceClone, hint: "ElevenLabs" },
+              { icon: Bot, name: "Нейросеть и расшифровка речи", on: integrations.llm === "openai", hint: "OpenAI" },
+              { icon: Cpu, name: "Локальная нейросеть", on: integrations.llm === "ollama", hint: "Ollama" },
+              { icon: Clapperboard, name: "Анимированный аватар", on: false, hint: "в разработке" },
             ].map((i) => (
               <div key={i.name} className="flex items-center gap-3 rounded-2xl border p-4">
                 <span className="grid size-10 place-items-center rounded-xl bg-mist text-forest">
@@ -154,7 +154,7 @@ export function ExportView({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{i.name}</p>
-                  <p className="truncate font-mono text-xs text-muted-foreground">{i.env}</p>
+                  <p className="truncate text-xs text-muted-foreground">{i.hint}</p>
                 </div>
                 <Badge color={i.on ? "grass" : "navy"}>{i.on ? "подключено" : "не настроено"}</Badge>
               </div>
@@ -166,8 +166,8 @@ export function ExportView({
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
           <div>
-            <CardTitle>Системный промпт цифровой персоны</CardTitle>
-            <CardDescription>Собирается из ответов, воспоминаний и расшифровок. Подходит для любой LLM.</CardDescription>
+            <CardTitle>Описание личности для нейросети</CardTitle>
+            <CardDescription>Собирается из ответов, воспоминаний и расшифровок. Подходит для любой нейросети-собеседника.</CardDescription>
           </div>
           <CopyButton text={prompt} />
         </CardHeader>

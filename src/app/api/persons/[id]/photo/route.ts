@@ -12,7 +12,7 @@ export const GET = route<{ id: string }>(async (_req, { id }) => {
   if (!person.photoKey) throw new HttpError(404, "Фото не загружено");
   const data = await storage().get(person.photoKey);
   const ext = person.photoKey.split(".").pop() ?? "jpg";
-  return new Response(new Uint8Array(data), { headers: { "Content-Type": MIME[ext] ?? "image/jpeg", "Cache-Control": "private, max-age=60", "Content-Security-Policy": "default-src 'none'" } });
+  return new Response(new Uint8Array(data), { headers: { "Content-Type": MIME[ext] ?? "image/jpeg", "Cache-Control": "private, no-store", "Content-Security-Policy": "default-src 'none'" } });
 });
 
 export const POST = route<{ id: string }>(async (req, { id }) => {

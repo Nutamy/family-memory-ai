@@ -4,16 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { chapterOfModule, getModule, moduleHref, nextModule, personBase, type ModuleDef } from "@/lib/questionnaire";
 import type { Progress as P } from "@/lib/progress";
+import { FillingGuide } from "./filling-guide";
 
 export function ModuleHeader({ module: m, progress }: { module: ModuleDef; progress?: P }) {
   const chapter = chapterOfModule(m.slug);
   return (
     <div className="mb-8">
-      {chapter && (
-        <p className="eyebrow">
-          Глава {chapter.number} · {chapter.title}
-        </p>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="eyebrow">{chapter ? `Глава ${chapter.number} · ${chapter.title}` : "Архив"}</p>
+        <FillingGuide />
+      </div>
       <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{m.title}</h1>
       <p className="mt-2 text-lg text-muted-foreground">{m.subtitle}</p>
       {progress && (

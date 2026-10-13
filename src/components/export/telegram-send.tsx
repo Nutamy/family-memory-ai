@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 
 const OPTIONS = [
   { key: "report", label: "Отчёт о личности" },
-  { key: "json", label: "JSON профиля" },
+  { key: "json", label: "Данные профиля (JSON)" },
   { key: "audio", label: "Аудио MP3" },
-  { key: "wav", label: "Аудио WAV (оригинал)" },
+  { key: "wav", label: "Аудио WAV (без сжатия)" },
 ] as const;
 
 type Item = (typeof OPTIONS)[number]["key"];
@@ -50,8 +50,7 @@ export function TelegramSend({ personId, configured }: { personId: string; confi
   if (!configured) {
     return (
       <p className="text-sm text-muted-foreground">
-        Бот не подключён. Добавьте переменные <code className="font-mono">TELEGRAM_BOT_TOKEN</code> и{" "}
-        <code className="font-mono">TELEGRAM_CHAT_ID</code> и перезапустите приложение.
+        Отправка в Telegram для этого аккаунта не включена. Её подключает администратор сайта.
       </p>
     );
   }

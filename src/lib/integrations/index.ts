@@ -19,13 +19,27 @@ export function getVoiceCloneProvider(): VoiceCloneProvider | null {
   return process.env.ELEVENLABS_API_KEY ? new ElevenLabsProvider(process.env.ELEVENLABS_API_KEY) : null;
 }
 
-export function integrationStatus() {
+/**
+ * Telegram delivers into the operator's own chat, so only allowlisted accounts may use it:
+ * otherwise any registered user could push personal data into a chat they don't own.
+ * TELEGRAM_ALLOWED_EMAILS: comma-separated emails; empty means nobody.
+ */
+export function telegramAllowedFor(email: string | null | undefined) {
+  if (!telegramConfig() || !email) return false;
+  const allowed = (process.env.TELEGRAM_ALLOWED_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return allowed.includes(email.trim().toLowerCase());
+}
+
+export function integrationStatus(email?: string | null) {
   return {
     llm: getLLMProvider()?.id ?? null,
     transcription: getTranscriptionProvider()?.id ?? null,
     voiceClone: getVoiceCloneProvider()?.id ?? null,
     avatar: null as string | null,
-    telegram: !!telegramConfig(),
+    telegram: telegramAllowedFor(email),
   };
 }
 

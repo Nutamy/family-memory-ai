@@ -3,9 +3,34 @@ import { WatercolorDefs } from "@/components/decor";
 import { themeScript } from "@/components/layout/theme-toggle";
 import "./globals.css";
 
+const SITE_URL = process.env.APP_URL?.trim().replace(/\/+$/, "") || "https://family-memory-ai.altyn-click.workers.dev";
+const TITLE = "Семейная память — цифровой архив личности";
+const DESCRIPTION = "Сохраните историю близкого человека: голос, воспоминания, характер и жизненную мудрость — для детей и внуков.";
+
 export const metadata: Metadata = {
-  title: { default: "Family Memory AI — цифровой архив личности", template: "%s · Family Memory AI" },
-  description: "Сохраните историю человека, его голос, воспоминания и жизненную мудрость для будущих поколений.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s · Семейная память" },
+  description: DESCRIPTION,
+  applicationName: "Семейная память",
+  // Link previews in messengers and social networks; the image is public/og.png (1200×630).
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    url: "/",
+    siteName: "Семейная память",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Семейная память — голос, воспоминания и характер близкого человека" }],
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/og.png"] },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {

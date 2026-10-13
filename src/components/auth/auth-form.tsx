@@ -6,6 +6,7 @@ import Script from "next/script";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { isSafeNext } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -25,7 +26,9 @@ const GOOGLE_ERRORS: Record<string, string> = {
 export function AuthForm({ mode, turnstileSiteKey, google }: { mode: "login" | "register"; turnstileSiteKey?: string | null; google: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || (mode === "register" ? "/app/new" : "/app");
+  const fallback = mode === "register" ? "/app/new" : "/app";
+  const requested = params.get("next");
+  const next = isSafeNext(requested) ? requested : fallback;
   const [error, setError] = useState<string | null>(GOOGLE_ERRORS[params.get("error") ?? ""] ?? null);
   const [loading, setLoading] = useState(false);
 
@@ -46,7 +49,7 @@ export function AuthForm({ mode, turnstileSiteKey, google }: { mode: "login" | "
       setLoading(false);
       return;
     }
-    router.push(next.startsWith("/") ? next : "/app");
+    router.push(next);
     router.refresh();
   }
 
@@ -62,7 +65,7 @@ export function AuthForm({ mode, turnstileSiteKey, google }: { mode: "login" | "
             <GoogleIcon /> {mode === "login" ? "Войти через Google" : "Продолжить с Google"}
           </a>
           <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-            <span className="h-px flex-1 bg-border" /> или по email <span className="h-px flex-1 bg-border" />
+            <span className="h-px flex-1 bg-border" /> или по почте <span className="h-px flex-1 bg-border" />
           </div>
         </>
       )}
@@ -73,8 +76,8 @@ export function AuthForm({ mode, turnstileSiteKey, google }: { mode: "login" | "
         </div>
       )}
       <div>
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" required maxLength={254} autoComplete="email" placeholder="you@example.com" />
+        <Label htmlFor="email">Электронная почта</Label>
+        <Input id="email" name="email" type="email" required maxLength={254} autoComplete="email" placeholder="например, anna@mail.ru" />
       </div>
       <div>
         <Label htmlFor="password">Пароль</Label>
@@ -83,10 +86,10 @@ export function AuthForm({ mode, turnstileSiteKey, google }: { mode: "login" | "
           name="password"
           type="password"
           required
-          minLength={mode === "register" ? 8 : undefined}
+          minLength={mode === "register" ? 10 : undefined}
           maxLength={200}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          placeholder={mode === "register" ? "Не короче 8 символов" : "Ваш пароль"}
+          placeholder={mode === "register" ? "Не короче 10 символов" : "Ваш пароль"}
         />
       </div>
       {/* Honeypot: invisible to people, filled in by naive bots (checked in src/lib/security/form-guard.ts). */}

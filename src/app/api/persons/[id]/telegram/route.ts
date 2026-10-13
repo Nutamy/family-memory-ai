@@ -5,7 +5,9 @@ import { assertPersonAccess, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { loadPersonBundle } from "@/lib/data";
 import { buildProfileJson } from "@/lib/export";
+import { telegramAllowedFor } from "@/lib/integrations";
 import { escapeHtml, getTelegramClient } from "@/lib/integrations/telegram";
+import { db } from "@/lib/db";
 import { buildReport, type PersonalityReport } from "@/lib/report";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { sendAudioBatch } from "@/lib/telegram-delivery";
@@ -21,9 +23,9 @@ function reportMessage(r: PersonalityReport, progress: number) {
   const e = escapeHtml;
   const lines = [`<b>📜 ${e(r.name)}</b>`, `Архив заполнен на ${progress}%`, "", ...r.summary.map(e)];
   if (r.bigFive) {
-    lines.push("", "<b>Big Five</b>", ...r.bigFive.map((t) => `• ${e(t.title)}: ${t.value}`));
+    lines.push("", "<b>Большая пятёрка</b>", ...r.bigFive.map((t) => `• ${e(t.title)}: ${t.value}`));
   }
-  if (r.mbti) lines.push("", `<b>MBTI:</b> ${r.mbti.type} — ${e(r.mbti.name)}`);
+  if (r.mbti) lines.push("", `<b>Тип личности:</b> ${r.mbti.type} — ${e(r.mbti.name)}`);
   if (r.temperament) lines.push(`<b>Темперамент:</b> ${e(r.temperament.title)}`);
   if (r.values.length) lines.push("", "<b>Ценности</b>", ...r.values.map((v) => `• ${e(v)}`));
   lines.push(
@@ -39,8 +41,9 @@ function reportMessage(r: PersonalityReport, progress: number) {
  */
 export const POST = route<{ id: string }>(async (req, { id }) => {
   const person = await assertPersonAccess(id);
+  const owner = await db.user.findUnique({ where: { id: person.userId }, select: { email: true } });
   const tg = getTelegramClient();
-  if (!tg) throw new HttpError(501, "Telegram не настроен: задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID");
+  if (!tg || !telegramAllowedFor(owner?.email)) throw new HttpError(403, "Отправка в Telegram для этого аккаунта не включена");
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) throw new HttpError(400, "Некорректные данные");
   const items = new Set(parsed.data.items);

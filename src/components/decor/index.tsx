@@ -35,8 +35,8 @@ export function Logo({ className, compact }: { className?: string; compact?: boo
         <path d="M20 21c0-8 5-14 14-16-1 9-6 14-14 16Z" fill="currentColor" opacity=".6" />
         <path d="M20 21V9" stroke="currentColor" strokeWidth="1.2" />
       </svg>
-      <span className={cn("font-sans font-bold uppercase tracking-[0.28em]", compact ? "text-[11px]" : "text-sm")}>
-        Family Memory
+      <span className={cn("whitespace-nowrap font-sans font-bold uppercase tracking-[0.2em]", compact ? "text-[11px]" : "text-sm")}>
+        Семейная память
       </span>
     </span>
   );
@@ -127,17 +127,22 @@ export function Sparkles({ className, style }: P) {
 
 /** Torn watercolor brush stroke used as a section divider (hills / waves). */
 export function BrushDivider({ className, tone = "green" }: { className?: string; tone?: "green" | "blue" | "mist" }) {
-  const fills = {
-    green: ["#5E8357", "#2D4B39"],
-    blue: ["#2E4A72", "#1D314F"],
-    mist: ["#D8E5DB", "#BFD3C4"],
+  // The front stroke and the base strip use exactly the adjacent section's color (incl. dark theme),
+  // so the divider merges into the section without a visible seam.
+  const { back, front } = {
+    green: { back: "#5E8357", front: "fill-[#2D4B39] dark:fill-[#16261d]" },
+    blue: { back: "#2E4A72", front: "fill-navy" },
+    mist: { back: "#D8E5DB", front: "fill-[#BFD3C4]" },
   }[tone];
   return (
-    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={cn("block h-16 w-full sm:h-24", className)} aria-hidden>
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className={cn("relative -my-px block h-16 w-full sm:h-24", className)} aria-hidden>
+      {/* Paths overshoot the viewBox: the displacement filter samples beyond the edges and would tear holes there. */}
       <g filter="url(#wc-rough)">
-        <path d="M0 60C120 30 220 80 360 56s260-50 400-20 300 40 440 10V120H0Z" fill={fills[0]} opacity=".55" />
-        <path d="M0 84c140-30 260 10 420-6s300-40 460-14 240 20 320 6V120H0Z" fill={fills[1]} opacity=".75" />
+        <path d="M-40 60C120 30 220 80 360 56s260-50 400-20 300 40 440 10l40-4V150H-40Z" fill={back} opacity=".55" />
+        <path d="M-40 84c180-30 300 10 460-6s300-40 460-14 240 20 320 6l40-2V150H-40Z" className={front} />
       </g>
+      {/* Unfiltered base: guarantees a solid edge where the divider meets the section. */}
+      <rect x="0" y="100" width="1200" height="20" className={front} />
     </svg>
   );
 }

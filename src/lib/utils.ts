@@ -69,3 +69,13 @@ export function slugifyFile(name: string): string {
       .slice(0, 60) || "record"
   );
 }
+
+/** Same-site path for redirects after sign-in; anything else would make an open redirect (phishing aid). */
+export function isSafeNext(next: string | null | undefined): next is string {
+  if (!next || next.length > 512 || !next.startsWith("/") || /[\\\u0000-\u001f]/.test(next)) return false;
+  try {
+    return new URL(next, "http://same.invalid").origin === "http://same.invalid";
+  } catch {
+    return false;
+  }
+}

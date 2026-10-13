@@ -117,7 +117,7 @@ storage/                 аудио и фото (локальное хранил
 
 ## Безопасность
 
-Проверка `Origin` у всех изменяющих запросов (CSRF), лимиты частоты (счётчики в БД), лимит попыток входа, honeypot и Cloudflare Turnstile на формах, PKCE и проверка id_token для Google, проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. Подробности — в [docs/cloudflare.md](docs/cloudflare.md#безопасность).
+Проверка `Origin` у всех изменяющих запросов (CSRF), лимиты частоты (счётчики в БД), лимит попыток входа, honeypot и Cloudflare Turnstile на формах, PKCE и проверка id_token для Google, проверка типа загружаемых файлов по сигнатуре, CSP и защитные заголовки. Сессии отзываются через базу («Выйти на всех устройствах»), аккаунт удаляется самим пользователем, квоты на архивы и записи, ответы API не кэшируются. Строгий чек-лист — [docs/security.md](docs/security.md), настройка панели — [docs/cloudflare.md](docs/cloudflare.md#безопасность).
 
 ## Интеграции ИИ
 
@@ -143,6 +143,7 @@ storage/                 аудио и фото (локальное хранил
 1. Создайте бота у [@BotFather](https://t.me/BotFather) и скопируйте токен.
 2. Напишите боту `/start`, затем откройте `https://api.telegram.org/bot<TOKEN>/getUpdates` и возьмите `chat.id`. Для группы добавьте бота в группу; её id начинается с `-100`.
 3. Задайте переменные `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` (также понимаются `TELEGRAM_TOKEN` / `BOT_TOKEN` и `CHAT_ID`).
+4. Перечислите в `TELEGRAM_ALLOWED_EMAILS` аккаунты, которым разрешена отправка (через запятую). Без списка кнопка выключена для всех: все архивы уходят в один чат, и чужие данные туда попадать не должны.
 
 Код: `src/lib/integrations/telegram.ts`, `src/lib/telegram-delivery.ts`, маршрут `POST /api/persons/:id/telegram` с телом `{ "items": ["report", "json", "audio", "wav"], "cursor": 0 }` (`audio` — MP3); ответ `{ next, total }`, `next: null` — всё отправлено.
 

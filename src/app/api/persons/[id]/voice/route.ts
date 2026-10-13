@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { toVoiceDTO } from "@/lib/dto";
 import { getQuestion } from "@/lib/questionnaire";
 import { sniffFile } from "@/lib/security/file-signature";
+import { assertItemQuota } from "@/lib/security/quota";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { storage } from "@/lib/storage";
 
@@ -21,6 +22,7 @@ export const GET = route<{ id: string }>(async (_req, { id }) => {
 export const POST = route<{ id: string }>(async (req, { id }) => {
   const person = await assertPersonAccess(id);
   await rateLimit(`voice:${person.userId}`, { limit: 200, windowSec: 60 * 60 });
+  await assertItemQuota("voiceRecords", id);
   const declared = Number(req.headers.get("content-length"));
   if (declared > maxBytes() * 1.3) throw new HttpError(413, "Запись слишком большая");
   const form = await req.formData();

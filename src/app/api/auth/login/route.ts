@@ -20,13 +20,10 @@ export const POST = route(async (req) => {
   const user = email ? await db.user.findUnique({ where: { email } }) : null;
   const hash = user?.passwordHash ?? (await dummyPasswordHash());
   const ok = password.length <= 200 && (await verifyPassword(password, hash));
-  if (!user?.passwordHash || !ok) {
-    // Google-only accounts have no password; say so instead of a generic failure.
-    if (user && !user.passwordHash && user.provider === "google") throw new HttpError(401, "Этот email зарегистрирован через Google — нажмите «Войти через Google»");
-    throw new HttpError(401, "Неверный email или пароль");
-  }
+  // One neutral message for every failure, so the form can't be used to find out who has an account.
+  if (!user?.passwordHash || !ok) throw new HttpError(401, "Неверная почта или пароль. Если вы регистрировались через Google — войдите через Google.");
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email }), sessionCookieOptions);
+  res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email, sv: user.sessionVersion }), sessionCookieOptions);
   return res;
 });

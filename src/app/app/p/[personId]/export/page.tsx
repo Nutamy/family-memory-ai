@@ -10,14 +10,14 @@ export const metadata = { title: "Экспорт и ИИ" };
 
 export default async function ExportPage({ params }: { params: Promise<{ personId: string }> }) {
   const { personId } = await params;
-  await requirePerson(personId);
+  const { user } = await requirePerson(personId);
   const bundle = await loadPersonBundle(personId);
   return (
     <ExportView
       personId={personId}
       stats={buildExportStats(bundle)}
       prompt={buildPersonaPrompt(bundle, buildReport(bundle))}
-      integrations={integrationStatus()}
+      integrations={integrationStatus(user.email)}
     />
   );
 }

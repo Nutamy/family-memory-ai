@@ -14,7 +14,15 @@ async function upsertGoogleUser(g: GoogleIdentity) {
   if (byGoogle) return byGoogle;
   const byEmail = await db.user.findUnique({ where: { email: g.email } });
   if (byEmail) {
-    return db.user.update({ where: { id: byEmail.id }, data: { provider: "google", providerId: g.sub, passwordHash: null, name: byEmail.name ?? g.name } });
+    return db.user.update({ where: { id: byEmail.id }, data: {
+        provider: "google",
+        providerId: g.sub,
+        passwordHash: null,
+        name: byEmail.name ?? g.name,
+        // Also revoke sessions opened with that password.
+        sessionVersion: { increment: 1 },
+      },
+    });
   }
   try {
     return await db.user.create({ data: { email: g.email, name: g.name, provider: "google", providerId: g.sub } });
@@ -47,7 +55,7 @@ export async function GET(req: Request) {
     await rateLimit(`google-ip:${clientIp(req)}`, { limit: 30, windowSec: 15 * 60 });
     const user = await upsertGoogleUser(await finishGoogleSignIn(req, code, saved.verifier));
     const res = NextResponse.redirect(new URL(saved.next, url));
-    res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email: user.email }), sessionCookieOptions);
+    res.cookies.set(SESSION_COOKIE, await createSessionToken({ sub: user.id, email: user.email, sv: user.sessionVersion }), sessionCookieOptions);
     res.cookies.set(OAUTH_COOKIE, "", { path: CALLBACK_PATH, maxAge: 0 });
     return res;
   } catch (e) {

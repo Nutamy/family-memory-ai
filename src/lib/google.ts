@@ -3,6 +3,7 @@
 import "server-only";
 import { createRemoteJWKSet, jwtVerify, SignJWT } from "jose";
 import { authSecretKey } from "./session";
+import { isSafeNext } from "./utils";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -10,6 +11,7 @@ const JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/ce
 
 export const OAUTH_COOKIE = "fm_oauth";
 export const CALLBACK_PATH = "/api/auth/google/callback";
+const OAUTH_AUDIENCE = "oauth-state";
 
 export function googleConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -27,7 +29,7 @@ export function redirectUri(req: Request) {
 
 /** Only same-site paths: an open redirect after sign-in would be a phishing aid. */
 export function safeNext(next: string | null | undefined) {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/app";
+  return isSafeNext(next) ? next! : "/app";
 }
 
 const b64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -54,6 +56,7 @@ export async function startGoogleSignIn(req: Request, next: string) {
 
   const cookie = await new SignJWT({ state, verifier, next: safeNext(next) })
     .setProtectedHeader({ alg: "HS256" })
+    .setAudience(OAUTH_AUDIENCE)
     .setExpirationTime("10m")
     .sign(authSecretKey());
   return { url: url.toString(), cookie };
@@ -62,7 +65,7 @@ export async function startGoogleSignIn(req: Request, next: string) {
 export async function readOAuthCookie(token: string | undefined) {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, authSecretKey());
+    const { payload } = await jwtVerify(token, authSecretKey(), { algorithms: ["HS256"], audience: OAUTH_AUDIENCE });
     return payload as { state: string; verifier: string; next: string };
   } catch {
     return null;

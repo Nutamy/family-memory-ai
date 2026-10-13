@@ -88,7 +88,7 @@ export function RecordingItem({
         <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}>
           <FileText /> Расшифровка <ChevronDown className={cn("transition-transform", open && "rotate-180")} />
         </Button>
-        <Button variant="ghost" size="sm" onClick={transcribe} disabled={!!busy} title="Автоматическая расшифровка (OpenAI Whisper)">
+        <Button variant="ghost" size="sm" onClick={transcribe} disabled={!!busy} title="Автоматическая расшифровка речи в текст">
           {busy === "transcribe" ? <Loader2 className="animate-spin" /> : <Wand2 />} Авто
         </Button>
         <Button variant="danger" size="sm" onClick={remove} disabled={!!busy} className="ml-auto">

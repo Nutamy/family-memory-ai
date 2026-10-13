@@ -48,3 +48,20 @@ export async function verifyPassword(password: string, stored: string): Promise<
 // Compared against when the email is unknown, so response time does not reveal registered emails.
 let dummy: Promise<string> | null = null;
 export const dummyPasswordHash = () => (dummy ??= hashPassword("timing-equalizer"));
+
+// The most common passwords and keyboard walks; a full breach list would need an external service.
+const COMMON = new Set([
+  "1234567890", "0123456789", "12345678910", "1111111111", "0000000000", "1234512345", "9876543210", "qwertyuiop",
+  "1q2w3e4r5t", "1qaz2wsx3edc", "qwerty1234", "qwerty12345", "password12", "password123", "password1234",
+  "iloveyou12", "asdfghjkl1", "zxcvbnm123", "йцукенгшщз", "пароль1234", "abcdefghij", "abc1234567", "aaaaaaaaaa",
+]);
+
+/** Human-readable reason why a new password is too weak, or null when it is acceptable. */
+export function passwordProblem(password: string, email: string): string | null {
+  const p = password.toLowerCase();
+  if (COMMON.has(p) || /^(.)\1+$/.test(p)) return "Этот пароль слишком простой — его легко подобрать";
+  const local = email.split("@")[0]?.toLowerCase() ?? "";
+  if (local.length >= 4 && p.includes(local)) return "Пароль не должен содержать адрес почты";
+  if (new Set(p).size < 4) return "В пароле должно быть хотя бы 4 разных символа";
+  return null;
+}

@@ -145,6 +145,8 @@ npx wrangler secret put TELEGRAM_BOT_TOKEN
 npx wrangler secret put TELEGRAM_CHAT_ID
 ```
 
+Бот шлёт всё в один чат — ваш, поэтому кнопка работает только для аккаунтов из списка. Задайте его в **Workers & Pages → family-memory-ai → Settings → Variables**: `TELEGRAM_ALLOWED_EMAILS` = `ваша@почта.ru` (несколько адресов — через запятую). Без списка отправка выключена для всех: иначе любой зарегистрированный человек мог бы прислать свои данные в ваш чат.
+
 Как получить токен и chat id — в разделе «Telegram-бот» в README. Секреты применяются сразу, повторный деплой не нужен. Проверка: `npx wrangler secret list`.
 
 ## 10. Проверить, что бесплатного тарифа хватает
@@ -198,7 +200,11 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 | SQL-инъекции | Только Prisma с параметризованными запросами, сырого SQL нет | — |
 | Подмена файлов (HTML вместо WAV и т. п.) | Тип определяется по первым байтам файла, есть лимиты размера | `src/lib/security/file-signature.ts` |
 | XSS, кликджекинг | CSP, `X-Frame-Options: DENY`, `nosniff`, HSTS, `Permissions-Policy` | `next.config.ts` |
-| Расходы и злоупотребления | Лимиты: новая отправка в Telegram 5 раз за 10 мин, расшифровка 30 раз в час, загрузка 200 записей в час (счётчики в D1) | `src/lib/security/rate-limit.ts` |
+| Расходы и злоупотребления | Лимиты: новая отправка в Telegram 5 раз за 10 мин, расшифровка 30 раз в час, загрузка 200 записей в час, общий лимит изменений с одного IP, квоты на число архивов и записей | `src/lib/security/rate-limit.ts`, `src/lib/security/quota.ts` |
+| Украденная или забытая сессия | Сессия 14 дней в cookie `__Host-fm_session`; версия сессии сверяется с базой, «Выйти на всех устройствах» и удаление аккаунта отзывают все токены сразу | `src/lib/session.ts`, `src/lib/auth.ts`, `src/app/api/account/route.ts` |
+| Чужие данные в чате Telegram | Отправка разрешена только аккаунтам из `TELEGRAM_ALLOWED_EMAILS` | `src/lib/integrations/index.ts` |
+
+Полный чек-лист с проверками перед каждым релизом — [docs/security.md](security.md).
 | Утечка файлов | R2 приватный, файлы отдаются только через API | `src/lib/storage/r2.ts` |
 
 ### Что включить в панели
