@@ -22,6 +22,16 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           {children}
         </div>
       </div>
+      <div className="container pb-6 text-center text-xs text-muted-foreground">
+        Продолжая, вы принимаете{" "}
+        <Link href="/terms" className="underline hover:text-primary">
+          условия
+        </Link>{" "}
+        и{" "}
+        <Link href="/privacy" className="underline hover:text-primary">
+          политику конфиденциальности
+        </Link>
+      </div>
     </main>
   );
 }

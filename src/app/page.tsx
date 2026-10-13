@@ -264,6 +264,14 @@ export default async function HomePage() {
         <div className="container flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
           <Logo compact />
           <p>Без регистрации — только в вашем браузере. С аккаунтом — в защищённой базе.</p>
+          <nav className="flex gap-4">
+            <Link href="/privacy" className="hover:text-primary">
+              Конфиденциальность
+            </Link>
+            <Link href="/terms" className="hover:text-primary">
+              Условия
+            </Link>
+          </nav>
         </div>
       </footer>
     </main>

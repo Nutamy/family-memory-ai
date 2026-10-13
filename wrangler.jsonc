@@ -7,13 +7,16 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
+  // Keep variables added in the dashboard on deploy instead of wiping them. Secrets survive either way.
+  "keep_vars": true,
 
-  // Paste the database_id printed by `npx wrangler d1 create family-memory-db`.
+  // Production database. Not a secret; keep it committed — every Git build deploys exactly this file,
+  // and scripts/check-wrangler.ts stops a Cloudflare build if it is ever reset to the placeholder.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "family-memory-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "7fd82484-d0b9-4665-98f7-33c33e0b1eb7",
       "migrations_dir": "prisma/migrations-d1"
     }
   ],
@@ -25,7 +28,9 @@
     "STORAGE_DRIVER": "r2",
     // "Sign in with Google" (docs/cloudflare.md, step 8): the OAuth client id is public;
     // GOOGLE_CLIENT_SECRET and AUTH_SECRET go through `wrangler secret put`.
-    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_CLIENT_ID": "235686886536-2h2739aob1f19os51qiq19mmjifm5fc4.apps.googleusercontent.com",
+    // Shown on /privacy and /terms for data and account deletion requests.
+    "CONTACT_EMAIL": "",
     // Telegram: each recording is one document; bigger files are cut into chunks of this size.
     // 30 MB keeps memory well under the 128 MB isolate limit; 5 documents per request
     // stays within the Free plan's 50 subrequests.

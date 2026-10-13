@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "tsx scripts/build-sw.ts && next dev",
     "dev:cf": "tsx scripts/build-sw.ts && CF_DEV=1 next dev",
-    "build": "tsx scripts/gen-d1-bootstrap.ts && tsx scripts/build-sw.ts --minify && next build",
+    "build": "tsx scripts/check-wrangler.ts && tsx scripts/gen-d1-bootstrap.ts && tsx scripts/build-sw.ts --minify && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -59,7 +59,7 @@ npx wrangler d1 create family-memory-db --location weur
 ]
 ```
 
-`database_id` не секрет: без вашего доступа к аккаунту по нему ничего не сделать. Его можно коммитить.
+`database_id` не секрет: без вашего доступа к аккаунту по нему ничего не сделать. **Его нужно коммитить**: автодеплой из GitHub берёт настройки только из `wrangler.jsonc`, а правки привязок в панели Cloudflare перезаписываются при каждом деплое. Если ID когда-нибудь снова заменят нулями, сборка в Cloudflare остановится сразу с понятной ошибкой (`scripts/check-wrangler.ts`).
 
 ## 4. Создать таблицы и залить каталог вопросов
 
@@ -117,7 +117,9 @@ openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
 Без этого шага работает вход по email и паролю, кнопки Google просто нет.
 
 1. Откройте [Google Cloud Console](https://console.cloud.google.com/) и создайте проект (например, `family-memory`).
-2. **Google Auth Platform → Branding**: название приложения, email поддержки, домен сайта. **Audience**: тип **External**, затем **Publish app**. Приложение запрашивает только `openid`, `email` и `profile`, для них проверка Google не нужна.
+2. **Google Auth Platform → Branding**: название приложения, email поддержки, ссылки на главную, `/privacy` и `/terms`, контактный email разработчика. **Audience**: тип **External**.
+   - Пока приложение в режиме **Testing**, войти через Google могут только люди из списка **Audience → Test users** (до 100 адресов). Для семьи этого достаточно.
+   - Для всех желающих нажмите **Publish app**. Кнопка активна, когда заполнен Branding. Google может попросить подтвердить владение доменом в Search Console; со своим доменом (шаг 12) это проще, чем с `*.workers.dev`.
 3. **Google Auth Platform → Clients → Create client**: тип **Web application**. В **Authorized redirect URIs** добавьте:
    - `https://family-memory-ai.<субдомен>.workers.dev/api/auth/google/callback`;
    - `https://memory.example.com/api/auth/google/callback`, если есть свой домен (шаг 12);
@@ -128,11 +130,7 @@ openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
    "GOOGLE_CLIENT_ID": "1234567890-abc.apps.googleusercontent.com",
    ```
 
-5. **Client secret** — секретом:
-
-   ```bash
-   npx wrangler secret put GOOGLE_CLIENT_SECRET
-   ```
+5. **Client secret** — секретом: `npx wrangler secret put GOOGLE_CLIENT_SECRET` или в панели **Settings → Variables and Secrets → Add → Type: Secret**. Тип **Text** не подходит: такое значение видно в панели и стирается при деплое.
 
 6. `npm run cf:deploy`. Проверка: на `/login` появится «Войти через Google».
 
