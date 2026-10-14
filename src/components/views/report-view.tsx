@@ -1,6 +1,6 @@
 import { Quote } from "lucide-react";
 import Link from "next/link";
-import { Illustration, Leaf, Sparkles } from "@/components/decor";
+import { Illustration, Sparkles } from "@/components/decor";
 import { BigFiveRadar, EmotionsBar, PrioritiesRadar, TemperamentPie } from "@/components/report/report-charts";
 import { PrintButton } from "@/components/report/print-button";
 import { TrackSection } from "@/components/questionnaire/track-section";
@@ -40,7 +40,6 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
       <section className="relative overflow-hidden rounded-[2rem] bg-navy p-6 text-cream sm:p-10">
         <Sparkles className="absolute right-48 top-8 hidden w-14 lg:block" />
         <Illustration name="fox" className="absolute right-8 top-8 hidden w-40 lg:block" />
-        <Leaf className="absolute -bottom-3 right-10 w-14 rotate-45 opacity-70" color="#5E8357" />
         <Quote className="size-8 text-honey" />
         <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">Портрет личности</h2>
         <div className="relative mt-4 space-y-3 text-lg lg:pr-52 leading-relaxed text-cream/85">

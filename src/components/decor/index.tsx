@@ -151,7 +151,7 @@ export function BrushDivider({ className, tone = "green" }: { className?: string
 export function DecorScatter({ variant = "default" }: { variant?: "default" | "quiet" }) {
   return (
     <div className="pointer-events-none absolute inset-0 -z-0 overflow-hidden" aria-hidden>
-      <Leaf className="absolute -left-4 top-24 w-16 rotate-[-25deg] animate-float opacity-80 sm:w-20" />
+      <Leaf className="absolute -left-4 top-24 hidden w-20 rotate-[-25deg] animate-float opacity-80 xl:block" />
       <Bird className="absolute right-4 top-6 w-20 animate-float [animation-delay:-2s] sm:right-12 sm:w-28" />
       {variant === "default" && (
         <>

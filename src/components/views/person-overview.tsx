@@ -1,6 +1,6 @@
 import { ArrowRight, BookHeart, Clock, MessageSquareText, UserRound } from "lucide-react";
 import Link from "next/link";
-import { Illustration, Leaf } from "@/components/decor";
+import { Illustration } from "@/components/decor";
 import { ModuleIcon } from "@/components/layout/module-icon";
 import { Button } from "@/components/ui/button";
 import { Progress, ProgressRing } from "@/components/ui/progress";
@@ -32,8 +32,6 @@ export function PersonOverview({ person, progress, memoriesCount }: { person: Ov
       <section className="relative overflow-hidden rounded-[2rem] bg-navy p-6 text-cream sm:p-10">
         <Illustration name="moon" className="absolute right-6 top-6 w-10 sm:w-14" />
         <Illustration name="star-small" className="absolute right-20 top-16 w-4 sm:right-28" />
-        <Illustration name="bear" className="absolute -bottom-2 right-[30%] hidden w-40 opacity-95 xl:block" />
-        <Leaf className="absolute -bottom-4 right-1/3 w-16 rotate-45 opacity-70" />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="size-28 shrink-0 rotate-[-3deg] rounded-2xl bg-cream p-1.5 shadow-xl">
             {person.photoKey ? (
@@ -56,7 +54,7 @@ export function PersonOverview({ person, progress, memoriesCount }: { person: Ov
             </p>
           </div>
         </div>
-        <div className="relative mt-8 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div className="relative mt-8 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto] sm:items-end xl:grid-cols-[1fr_auto_auto]">
           <div>
             <div className="flex items-baseline gap-2">
               <span className="font-serif text-5xl font-semibold">{progress.overall.percent}%</span>
@@ -64,8 +62,10 @@ export function PersonOverview({ person, progress, memoriesCount }: { person: Ov
             </div>
             <Progress value={progress.overall.percent} className="mt-3 h-2.5 bg-cream/15" />
           </div>
+          {/* In the grid flow, not absolute: it sits between the progress bar and the button instead of under the button. */}
+          <Illustration name="bear" className="-mb-10 hidden w-36 self-end opacity-95 xl:block" />
           {continueSlug && (
-            <Button asChild size="lg" variant="secondary">
+            <Button asChild size="lg" variant="secondary" className="h-auto min-h-12 whitespace-normal py-3 text-center">
               <Link href={moduleHref(personId, continueSlug)}>
                 Продолжить: {getModule(continueSlug)?.title} <ArrowRight />
               </Link>
@@ -102,7 +102,7 @@ export function PersonOverview({ person, progress, memoriesCount }: { person: Ov
               </div>
               <span className="text-sm font-bold text-muted-foreground">{progress.chapters[c.slug]?.percent ?? 0}%</span>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
               {c.modules.map((slug) => {
                 const m = getModule(slug)!;
                 const pct = progress.modules[slug]?.percent ?? 0;

@@ -47,7 +47,7 @@ export function ExportView({
         </p>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[
           { icon: Mic, value: formatMinutes(stats.seconds), label: "минут записи" },
           { icon: AudioLines, value: String(stats.recordings), label: "аудиофайлов" },

@@ -17,7 +17,7 @@ export interface ArchivePerson {
 /** actions: extra controls under the card (outside the link, so buttons stay valid HTML). */
 export function ArchiveCard({ person: p, progress, actions }: { person: ArchivePerson; progress: ProgressSummary; actions?: React.ReactNode }) {
   return (
-    <div className="paper-card group flex flex-col transition-transform hover:-translate-y-1">
+    <div className="paper-card group flex min-w-0 flex-col transition-transform hover:-translate-y-1">
       <Link href={personBase(p.id)} className="block flex-1 p-6">
         <div className="flex items-center gap-4">
           <div className="size-16 shrink-0 rotate-[-3deg] rounded-xl bg-card p-1 shadow-device">

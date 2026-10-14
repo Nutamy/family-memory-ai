@@ -28,7 +28,7 @@ const FIELDS: { key: keyof ProfileValues; label: string; placeholder?: string; t
   { key: "birthDate", label: "Дата рождения", type: "date" },
   { key: "birthPlace", label: "Город рождения", placeholder: "Казань" },
   { key: "residence", label: "Где живёте сейчас", placeholder: "Москва" },
-  { key: "profession", label: "Профессия", placeholder: "Учитель литературы" },
+  { key: "profession", label: "Профессия", placeholder: "Учитель литературы", wide: true },
   { key: "education", label: "Образование", placeholder: "КГУ, филологический факультет", wide: true },
 ];
 

@@ -32,10 +32,11 @@ export function VoiceArchive({ personId, initial }: { personId: string; initial:
   return (
     <div className="space-y-10">
       <section className="relative overflow-hidden rounded-[2rem] bg-navy px-5 py-10 text-cream sm:px-10">
-        <Bird className="absolute right-6 top-6 w-24 opacity-90" />
+        <Bird className="absolute right-6 top-6 hidden w-24 opacity-90 md:block" />
         <Leaf className="absolute -left-2 bottom-6 w-14 rotate-[-30deg] opacity-80" />
         <Illustration name="moon" className="absolute left-6 top-6 w-10" />
-        <Illustration name="bee-trail" className="absolute bottom-10 right-4 hidden w-40 opacity-80 md:block" />
+        {/* Beside the recorder card, above the tip line: lower it overlapped the tip text. */}
+        <Illustration name="bee-trail" className="absolute bottom-28 right-6 hidden w-40 opacity-80 xl:block" />
         <div className="relative mx-auto max-w-xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-honey">Говорите свободно</p>
           <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Записать воспоминание</h2>

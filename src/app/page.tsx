@@ -68,8 +68,8 @@ export default async function HomePage() {
             </ContinueButton>
           </Reveal>
           <Reveal delay={0.3}>
-            <p className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <ShieldCheck className="size-4 text-grass" /> Можно без регистрации — архив останется на вашем устройстве
+            <p className="mx-auto mt-6 flex max-w-xs items-start justify-center gap-2 text-left text-sm text-muted-foreground sm:max-w-none sm:items-center">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-grass sm:mt-0" /> Можно без регистрации — архив останется на вашем устройстве
             </p>
           </Reveal>
 
