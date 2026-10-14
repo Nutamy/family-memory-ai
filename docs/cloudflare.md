@@ -153,7 +153,10 @@ openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
 
 1. **Workers & Pages → Create → Workers → Import a repository** → `family-memory-ai`.
 2. Build command: `npx opennextjs-cloudflare build`; Deploy command: `npx opennextjs-cloudflare deploy`. Имя Worker'а — `family-memory-ai`, как в `wrangler.jsonc`.
-3. Каждый push в основную ветку будет деплоиться сам. Миграции базы так не применяются: после изменения схемы запускайте `npm run d1:migrate:remote` вручную (шаг 12).
+3. Другие ветки Cloudflare по умолчанию собирает командой `npx wrangler preview`. Она падает с `missing a previews block`, а без Build command ещё и не находит `.open-next/worker.js`. В **Settings → Build** выберите одно:
+   - снять **Builds for non-production branches** — деплой только из основной ветки (рекомендуется);
+   - или **Non-production branch deploy command**: `npx opennextjs-cloudflare upload`. Каждая ветка получит preview-ссылку, трафик прода не переключается. Превью работает с **боевыми** D1 и R2, а вход через Google на нём не работает (адреса превью нет в OAuth-клиенте).
+4. Каждый push в основную ветку будет деплоиться сам. Миграции базы так не применяются: после изменения схемы запускайте `npm run d1:migrate:remote` вручную (шаг 12).
 
 ## 11. Свой домен (по желанию)
 
