@@ -66,7 +66,6 @@ src/
     storage/             драйверы хранения файлов (local, R2, S3-заготовка)
     local/               архивы без регистрации: IndexedDB, API в service worker, перенос в аккаунт
     security/            лимит попыток, CSRF-проверка Origin, Turnstile/honeypot, сигнатуры файлов
-    telegram-delivery.ts отправка аудио в Telegram частями до 50 МБ
     integrations/        OpenAI, Ollama, ElevenLabs, аватары, промпт персоны
 storage/                 аудио и фото (локальное хранилище MVP)
 ```
@@ -110,7 +109,7 @@ storage/                 аудио и фото (локальное хранил
 
 На главной и на `/start` человек выбирает режим:
 
-- **Без регистрации** (`/local`): архив живёт в IndexedDB браузера. Service worker (`src/lib/local/sw.ts` → `public/sw.js`) отвечает на `/api/persons/loc_…` теми же ответами, что и сервер, поэтому компоненты, плееры и ссылки на скачивание работают без изменений. Экспорт JSON и ZIP собирается в браузере. Недоступны автоматическая расшифровка и Telegram — им нужны файлы на сервере. Кнопка «В аккаунт» на `/local` переносит архив целиком (`src/lib/local/upload.ts`, `POST /api/persons/import`).
+- **Без регистрации** (`/local`): архив живёт в IndexedDB браузера. Service worker (`src/lib/local/sw.ts` → `public/sw.js`) отвечает на `/api/persons/loc_…` теми же ответами, что и сервер, поэтому компоненты, плееры и ссылки на скачивание работают без изменений. Экспорт JSON и ZIP собирается в браузере. Недоступна автоматическая расшифровка — ей нужны файлы на сервере. Кнопка «В аккаунт» на `/local` переносит архив целиком (`src/lib/local/upload.ts`, `POST /api/persons/import`).
 - **С аккаунтом** (`/app`): регистрация на сайте по email и паролю (PBKDF2 через WebCrypto, `src/lib/password.ts`) или «Войти через Google» (OAuth 2.0 + PKCE, `src/lib/google.ts`, переменные `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`). Оба способа выдают одну и ту же подписанную JWT-cookie (`src/lib/session.ts`). Настройка Google — [docs/cloudflare.md](docs/cloudflare.md), шаг 8.
 
 Сброс пароля по почте пока не реализован: для него нужен почтовый сервис.
@@ -131,20 +130,6 @@ storage/                 аудио и фото (локальное хранил
 | Анимированный аватар | `AVATAR_PROVIDER` | интерфейс `AvatarProvider`, реализация не выбрана |
 
 `buildPersonaPrompt` (`src/lib/integrations/persona.ts`) собирает системный промпт цифровой копии из ответов, воспоминаний и расшифровок; он показывается на экране «Экспорт и ИИ» и кладётся в полный архив как `persona-prompt.md`.
-
-## Telegram-бот
-
-На экране «Экспорт и ИИ» есть кнопка «Отправить в Telegram»: бот присылает отчёт о личности текстом, `profile.json` и аудио в MP3 и/или WAV.
-
-Каждая запись приходит **отдельным файлом**, без упаковки: так не тратится процессорное время, что важно на бесплатном тарифе Cloudflare. Первым приходит `…-index.zip` с `metadata.json` (какая запись в каком файле) и расшифровками. У ботов лимит 50 МБ на файл, поэтому запись больше `TELEGRAM_PART_MB` (по умолчанию 45 МБ, на Cloudflare 30 МБ) режется на куски `запись.wav.001`, `.002`, …. Их открывает 7-Zip или склеивает `cat запись.wav.0* > запись.wav` (Windows: `copy /b запись.wav.001 + запись.wav.002 запись.wav`).
-
-Отправка идёт пачками по `TELEGRAM_BATCH` файлов (по умолчанию 5): страница повторяет запрос и показывает прогресс, пока не уйдёт всё. При ответе Telegram 429 (слишком часто) отправка ждёт и повторяет.
-
-1. Создайте бота у [@BotFather](https://t.me/BotFather) и скопируйте токен.
-2. Напишите боту `/start`, затем откройте `https://api.telegram.org/bot<TOKEN>/getUpdates` и возьмите `chat.id`. Для группы добавьте бота в группу; её id начинается с `-100`.
-3. Задайте переменные `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` (также понимаются `TELEGRAM_TOKEN` / `BOT_TOKEN` и `CHAT_ID`).
-
-Код: `src/lib/integrations/telegram.ts`, `src/lib/telegram-delivery.ts`, маршрут `POST /api/persons/:id/telegram` с телом `{ "items": ["report", "json", "audio", "wav"], "cursor": 0 }` (`audio` — MP3); ответ `{ next, total }`, `next: null` — всё отправлено.
 
 ## Дизайн
 

@@ -2,7 +2,6 @@ import "server-only";
 import { ElevenLabsProvider } from "./elevenlabs";
 import { OllamaProvider } from "./ollama";
 import { OpenAIProvider } from "./openai";
-import { telegramConfig } from "./telegram";
 import type { LLMProvider, TranscriptionProvider, VoiceCloneProvider } from "./types";
 
 export function getLLMProvider(): LLMProvider | null {
@@ -25,7 +24,6 @@ export function integrationStatus() {
     transcription: getTranscriptionProvider()?.id ?? null,
     voiceClone: getVoiceCloneProvider()?.id ?? null,
     avatar: null as string | null,
-    telegram: !!telegramConfig(),
   };
 }
 

@@ -379,7 +379,6 @@ async function route(req: Request, parts: string[]): Promise<Response> {
     }
   }
 
-  if (section === "telegram") throw new ApiError(501, "Отправка в Telegram работает только для архивов в аккаунте");
   throw new ApiError(404, "Не найдено");
 }
 

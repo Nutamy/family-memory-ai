@@ -23,7 +23,7 @@
   // Private bucket for audio and photos: files are served only through authorized API routes.
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "family-memory-files" }],
 
-  // Non-secret settings. Secrets (AUTH_SECRET, GOOGLE_CLIENT_SECRET, TELEGRAM_BOT_TOKEN, ...) go through `wrangler secret put`.
+  // Non-secret settings. Secrets (AUTH_SECRET, GOOGLE_CLIENT_SECRET, ...) go through `wrangler secret put`.
   "vars": {
     "STORAGE_DRIVER": "r2",
     // "Sign in with Google" (docs/cloudflare.md, step 8): the OAuth client id is public;
@@ -31,11 +31,6 @@
     "GOOGLE_CLIENT_ID": "235686886536-40borufr15kgle5tu06sgfg8n9riq9s1.apps.googleusercontent.com",
     // Shown on /privacy and /terms for data and account deletion requests.
     "CONTACT_EMAIL": "",
-    // Telegram: each recording is one document; bigger files are cut into chunks of this size.
-    // 30 MB keeps memory well under the 128 MB isolate limit; 5 documents per request
-    // stays within the Free plan's 50 subrequests.
-    "TELEGRAM_PART_MB": "30",
-    "TELEGRAM_BATCH": "5",
     // Workers accept request bodies up to 100 MB.
     "VOICE_MAX_MB": "90"
   }

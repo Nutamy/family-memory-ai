@@ -1,7 +1,6 @@
 import { AudioLines, Bot, Clapperboard, Cpu, FileArchive, FileJson, Gauge, Mic, Type } from "lucide-react";
 import { Illustration } from "@/components/decor";
 import { CopyButton } from "@/components/export/copy-button";
-import { TelegramSend } from "@/components/export/telegram-send";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,6 @@ import { ELEVENLABS_TARGETS } from "@/lib/quality";
 import { formatMinutes } from "@/lib/utils";
 
 export interface ExportIntegrations {
-  telegram: boolean;
   voiceClone: string | null;
   llm: string | null;
 }
@@ -91,22 +89,6 @@ export function ExportView({
           ))}
         </div>
       </section>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Отправить в Telegram</CardTitle>
-          <CardDescription>Результаты придут в чат с вашим ботом. Каждая запись приходит отдельным файлом; записи больше 50 МБ (лимит ботов) — кусками.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {local ? (
-            <p className="text-sm text-muted-foreground">
-              Доступно для архивов в аккаунте: сервер отправляет файлы, а в локальном режиме они есть только в вашем браузере.
-            </p>
-          ) : (
-            <TelegramSend personId={personId} configured={integrations.telegram} />
-          )}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

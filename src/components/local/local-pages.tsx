@@ -111,7 +111,7 @@ export function LocalExportPage() {
       personId={b.id}
       stats={buildExportStats(b)}
       prompt={buildPersonaPrompt(b, buildReport(b))}
-      integrations={{ telegram: false, voiceClone: null, llm: null }}
+      integrations={{ voiceClone: null, llm: null }}
       local
     />
   );
