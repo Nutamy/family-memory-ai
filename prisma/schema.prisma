@@ -22,6 +22,8 @@ model User {
   provider     String   @default("credentials")
   // Google account id ("sub" claim).
   providerId   String?
+  // Embedded in session tokens; incrementing it signs the user out on every device.
+  sessionVersion Int    @default(0)
   createdAt    DateTime @default(now())
   persons      Person[]
 

@@ -17,18 +17,19 @@ export function clientIp(req: Request) {
 export async function rateLimit(key: string, { limit, windowSec }: { limit: number; windowSec: number }) {
   const id = await sha256(key);
   const now = new Date();
-  const row = await db.rateLimit.findUnique({ where: { key: id } });
-
-  if (!row || row.resetAt <= now) {
-    const resetAt = new Date(now.getTime() + windowSec * 1000);
-    await db.rateLimit.upsert({ where: { key: id }, create: { key: id, count: 1, resetAt }, update: { count: 1, resetAt } });
+  // Increment first and check after: concurrent requests can't all slip through on one stale read.
+  let row = await db.rateLimit.upsert({
+    where: { key: id },
+    create: { key: id, count: 1, resetAt: new Date(now.getTime() + windowSec * 1000) },
+    update: { count: { increment: 1 } },
+  });
+  if (row.resetAt <= now) {
+    row = await db.rateLimit.update({ where: { key: id }, data: { count: 1, resetAt: new Date(now.getTime() + windowSec * 1000) } });
     // Occasional cleanup instead of a cron job.
     if (Math.random() < 0.02) await db.rateLimit.deleteMany({ where: { resetAt: { lt: now } } }).catch(() => {});
-    return;
   }
-  if (row.count >= limit) {
+  if (row.count > limit) {
     const minutes = Math.max(1, Math.ceil((row.resetAt.getTime() - now.getTime()) / 60_000));
     throw new HttpError(429, `Слишком много попыток. Повторите через ${minutes} мин.`);
   }
-  await db.rateLimit.update({ where: { key: id }, data: { count: { increment: 1 } } });
 }

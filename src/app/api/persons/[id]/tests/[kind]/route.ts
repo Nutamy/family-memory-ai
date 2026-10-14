@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 import { assertPersonAccess, HttpError } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
-import { isTestKind, scoreTest, TEST_META } from "@/lib/tests";
+import { testAnswersSchema } from "@/lib/schemas";
+import { cleanTestAnswers, isTestKind, scoreTest, TEST_META } from "@/lib/tests";
 
 export const PUT = route<{ id: string; kind: string }>(async (req, { id, kind }) => {
   await assertPersonAccess(id);
   if (!isTestKind(kind)) throw new HttpError(404, "Неизвестный тест");
-  const body = await req.json().catch(() => ({}));
-  const answers = (body.answers && typeof body.answers === "object" ? body.answers : {}) as Record<string, unknown>;
+  const parsed = testAnswersSchema.safeParse((await req.json().catch(() => ({})))?.answers ?? {});
+  if (!parsed.success) throw new HttpError(400, "Некорректные данные");
+  const answers = cleanTestAnswers(kind, parsed.data);
   const completed = Object.keys(answers).length >= TEST_META[kind].total;
   const result = completed ? scoreTest(kind, answers) : null;
   const data = { answers: JSON.stringify(answers), result: JSON.stringify(result), completed };

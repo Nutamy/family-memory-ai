@@ -23,7 +23,7 @@ export const GET = route<{ id: string; vid: string }>(async (req, { id, vid }) =
   const size = await storage().size(key);
   if (size === null) throw new HttpError(404, "Файл записи не найден");
   const type = format === "mp3" ? "audio/mpeg" : "audio/wav";
-  const headers: Record<string, string> = { "Content-Type": type, "Accept-Ranges": "bytes", "Cache-Control": "private, max-age=3600" };
+  const headers: Record<string, string> = { "Content-Type": type, "Accept-Ranges": "bytes", "Cache-Control": "private, no-store" };
   if (url.searchParams.get("download")) {
     const name = `${slugifyFile(r.title)}.${format}`;
     headers["Content-Disposition"] = `attachment; filename="record.${format}"; filename*=UTF-8''${encodeURIComponent(name)}`;

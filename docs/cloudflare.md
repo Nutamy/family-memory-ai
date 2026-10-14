@@ -192,7 +192,10 @@ openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET
 | SQL-инъекции | Только Prisma с параметризованными запросами, сырого SQL нет | — |
 | Подмена файлов (HTML вместо WAV и т. п.) | Тип определяется по первым байтам файла, есть лимиты размера | `src/lib/security/file-signature.ts` |
 | XSS, кликджекинг | CSP, `X-Frame-Options: DENY`, `nosniff`, HSTS, `Permissions-Policy` | `next.config.ts` |
-| Расходы и злоупотребления | Лимиты: расшифровка 30 раз в час, загрузка 200 записей в час (счётчики в D1) | `src/lib/security/rate-limit.ts` |
+| Расходы и злоупотребления | Лимиты: расшифровка 30 раз в час, загрузка 200 записей в час, общий лимит изменений с одного IP, квоты на число архивов и записей | `src/lib/security/rate-limit.ts`, `src/lib/security/quota.ts` |
+| Украденная или забытая сессия | Сессия 14 дней в cookie `__Host-fm_session`; версия сессии сверяется с базой, «Выйти на всех устройствах» и удаление аккаунта отзывают все токены сразу | `src/lib/session.ts`, `src/lib/auth.ts`, `src/app/api/account/route.ts` |
+
+Полный чек-лист с проверками перед каждым релизом — [docs/security.md](security.md).
 | Утечка файлов | R2 приватный, файлы отдаются только через API | `src/lib/storage/r2.ts` |
 
 ### Что включить в панели

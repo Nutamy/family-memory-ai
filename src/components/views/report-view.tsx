@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { personBase } from "@/lib/questionnaire";
 import type { PersonalityReport } from "@/lib/report";
+import { TEMPERAMENT_LABELS, type Temperament } from "@/lib/tests/temperament";
 import { formatMinutes } from "@/lib/utils";
 
 function Empty({ text, href, cta }: { text: string; href: string; cta: string }) {
@@ -30,7 +31,7 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
       <TrackSection personId={personId} slug="tests" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">Personality Report</p>
+          <p className="eyebrow">Отчёт о личности</p>
           <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{r.name}</h1>
         </div>
         <PrintButton />
@@ -65,7 +66,7 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Черты Big Five</CardTitle>
+            <CardTitle>Большая пятёрка черт</CardTitle>
             <CardDescription>Открытость, добросовестность, экстраверсия, доброжелательность, чувствительность</CardDescription>
           </CardHeader>
           <CardContent>
@@ -82,7 +83,7 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
                 </ul>
               </>
             ) : (
-              <Empty text="Пройдите тест Big Five, чтобы увидеть профиль." href={`${base}/tests`} cta="К тестам" />
+              <Empty text="Пройдите тест «Большая пятёрка», чтобы увидеть профиль." href={`${base}/tests`} cta="К тестам" />
             )}
           </CardContent>
         </Card>
@@ -90,17 +91,26 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
         <Card>
           <CardHeader>
             <CardTitle>Темперамент и тип</CardTitle>
-            <CardDescription>Классический темперамент и типология MBTI</CardDescription>
+            <CardDescription>Классический темперамент и один из 16 типов личности</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {r.temperament ? (
-              <div className="grid items-center gap-4 sm:grid-cols-2">
-                <TemperamentPie scores={r.temperament.scores} />
-                <div>
-                  <p className="font-serif text-3xl font-semibold">
-                    {r.temperament.title}
-                  </p>
+              <div className="grid items-center gap-6 sm:grid-cols-[160px_1fr]">
+                <div className="mx-auto w-40">
+                  <TemperamentPie scores={r.temperament.scores} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-serif text-3xl font-semibold">{r.temperament.title}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{r.temperament.description}</p>
+                  <ul className="mt-4 grid max-w-xs gap-y-1.5 text-sm">
+                    {(Object.keys(TEMPERAMENT_LABELS) as Temperament[]).map((t) => (
+                      <li key={t} className="flex items-center gap-2">
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ background: TEMPERAMENT_LABELS[t].color }} />
+                        <span className="text-muted-foreground">{TEMPERAMENT_LABELS[t].title}</span>
+                        <b className="ml-auto">{r.temperament!.scores[t] ?? 0}%</b>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             ) : (
@@ -115,7 +125,7 @@ export function ReportView({ personId, report: r }: { personId: string; report: 
                 </div>
               </div>
             ) : (
-              <Empty text="Тип MBTI ещё не определён." href={`${base}/tests`} cta="Пройти тест" />
+              <Empty text="Тип личности ещё не определён." href={`${base}/tests`} cta="Пройти тест" />
             )}
           </CardContent>
         </Card>

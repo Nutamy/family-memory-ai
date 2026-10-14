@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountSecurity } from "@/components/account/account-security";
 import { DecorScatter } from "@/components/decor";
 import { Button } from "@/components/ui/button";
 import { ArchiveCard, NewArchiveCard } from "@/components/views/archive-card";
@@ -12,6 +13,7 @@ export const metadata = { title: "Мои архивы" };
 export default async function ArchivesPage() {
   const user = await requireUser();
   const persons = await db.person.findMany({ where: { userId: user.id }, orderBy: { updatedAt: "desc" } });
+  const hasPassword = !!(await db.user.findUnique({ where: { id: user.id }, select: { passwordHash: true } }))?.passwordHash;
   const progress = await Promise.all(persons.map(async (p) => computeProgress(await loadProgressInput(p.id))));
 
   return (
@@ -19,7 +21,7 @@ export default async function ArchivesPage() {
       <DecorScatter variant="quiet" />
       <div className="relative">
         <p className="eyebrow">Семейный архив</p>
-        <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Чьи истории вы сохраняете</h1>
+        <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Ваши семейные архивы</h1>
         <p className="mt-3 max-w-xl text-lg text-muted-foreground">
           Создайте отдельный профиль для каждого человека — себя, мамы, дедушки. Возвращайтесь в любой момент.
         </p>
@@ -40,6 +42,7 @@ export default async function ArchivesPage() {
             Архивы на этом устройстве →
           </Link>
         </div>
+        <AccountSecurity hasPassword={hasPassword} />
       </div>
     </main>
   );

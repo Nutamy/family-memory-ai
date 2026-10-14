@@ -26,10 +26,13 @@ export const personPatchSchema = z
   .partial();
 
 export const answerSchema = z.object({
-  questionId: z.string(),
+  questionId: z.string().max(100),
   text: z.string().max(100_000).optional(),
-  value: z.union([z.string(), z.number(), z.array(z.string()), z.null()]).optional(),
+  value: z.union([z.string().max(1000), z.number().finite(), z.array(z.string().max(1000)).max(50), z.null()]).optional(),
 });
+
+/** Raw test answers; route handlers narrow them further with cleanTestAnswers(). */
+export const testAnswersSchema = z.record(z.string().max(20), z.union([z.number(), z.string().max(20)])).refine((r) => Object.keys(r).length <= 100);
 
 export const favoriteSchema = z.object({
   kind: z.enum(FAVORITE_KINDS.map((k) => k.kind) as [string, ...string[]]),

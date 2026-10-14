@@ -178,7 +178,7 @@ export function BigFiveView({ result }: { result: BigFiveResult }) {
   const colors = ["bg-primary", "bg-gold", "bg-grass", "bg-forest", "bg-navy dark:bg-cream/70"];
   return (
     <div>
-      <h3 className="text-2xl font-semibold">Профиль Big Five</h3>
+      <h3 className="text-2xl font-semibold">Профиль «Большой пятёрки»</h3>
       <div className="mt-6 space-y-5">
         {(Object.keys(BIG_FIVE_LABELS) as BigFiveTrait[]).map((t, i) => {
           const l = BIG_FIVE_LABELS[t];
@@ -187,7 +187,7 @@ export function BigFiveView({ result }: { result: BigFiveResult }) {
             <div key={t}>
               <div className="mb-1.5 flex items-baseline justify-between gap-2">
                 <p className="font-semibold">
-                  {l.title} <span className="text-xs font-normal text-muted-foreground">{l.en}</span>
+                  {l.title}
                 </p>
                 <span className="font-serif text-xl font-semibold">{v}</span>
               </div>
@@ -227,7 +227,7 @@ export function MbtiView({ result }: { result: MbtiResult }) {
           </div>
         ))}
       </div>
-      <p className="mt-6 text-xs text-muted-foreground">Ориентировочная типология по мотивам MBTI, не является официальным тестом MBTI®.</p>
+      <p className="mt-6 text-xs text-muted-foreground">Ориентировочная типология по мотивам методики Майерс — Бриггс, не является официальным тестом®.</p>
     </div>
   );
 }

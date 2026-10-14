@@ -36,6 +36,12 @@ export const D1_BOOTSTRAP_STEPS: { name: string; statements: string[] }[] = [
     ]
   },
   {
+    "name": "0003_user_session_version.sql",
+    "statements": [
+      "ALTER TABLE \"User\" ADD COLUMN \"sessionVersion\" INTEGER NOT NULL DEFAULT 0"
+    ]
+  },
+  {
     "name": "seed-questions-acb0775690f9",
     "statements": [
       "INSERT INTO \"Question\" (\"id\", \"category\", \"text\", \"hint\", \"type\", \"options\", \"minWords\", \"order\") VALUES ('basic.nickname', 'basic', 'Как вас называют близкие?', 'Ласковое имя, прозвище', 'text', 'null', 0, 0) ON CONFLICT (\"id\") DO UPDATE SET \"category\" = excluded.\"category\", \"text\" = excluded.\"text\", \"hint\" = excluded.\"hint\", \"type\" = excluded.\"type\", \"options\" = excluded.\"options\", \"minWords\" = excluded.\"minWords\", \"order\" = excluded.\"order\";",

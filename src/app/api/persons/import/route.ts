@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSessionUserId, HttpError } from "@/lib/auth";
+import { HttpError, requireApiUserId } from "@/lib/auth";
 import { route } from "@/lib/api";
 import { db } from "@/lib/db";
 import { getQuestion } from "@/lib/questionnaire";
-import { answerSchema, favoriteSchema, personCreateSchema, personPatchSchema } from "@/lib/schemas";
+import { answerSchema, favoriteSchema, personCreateSchema, personPatchSchema, testAnswersSchema } from "@/lib/schemas";
+import { assertPersonQuota, QUOTA } from "@/lib/security/quota";
 import { rateLimit } from "@/lib/security/rate-limit";
-import { isTestKind, scoreTest, TEST_META } from "@/lib/tests";
+import { cleanTestAnswers, isTestKind, scoreTest, TEST_META } from "@/lib/tests";
 
 const schema = z.object({
   person: personCreateSchema.extend(personPatchSchema.omit({ firstName: true }).shape),
   answers: z.array(answerSchema).max(1000),
-  tests: z.array(z.object({ kind: z.string(), answers: z.record(z.string(), z.unknown()) })).max(10),
-  favorites: z.array(favoriteSchema).max(2000),
+  tests: z.array(z.object({ kind: z.string().max(20), answers: testAnswersSchema })).max(10),
+  favorites: z.array(favoriteSchema).max(QUOTA.favorites),
 });
 
 /**
@@ -21,9 +22,9 @@ const schema = z.object({
  * Memories, recordings and the photo follow through the regular routes, one request each.
  */
 export const POST = route(async (req) => {
-  const userId = await getSessionUserId();
-  if (!userId) throw new HttpError(401, "Требуется вход");
+  const userId = await requireApiUserId();
   await rateLimit(`import:${userId}`, { limit: 20, windowSec: 60 * 60 });
+  await assertPersonQuota(userId);
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) throw new HttpError(400, parsed.error.issues[0]?.message ?? "Некорректные данные");
   const { person: data, answers, tests, favorites } = parsed.data;
@@ -40,9 +41,10 @@ export const POST = route(async (req) => {
 
   const testRows = tests.flatMap((t) => {
     if (!isTestKind(t.kind)) return [];
-    const completed = Object.keys(t.answers).length >= TEST_META[t.kind].total;
-    const result = completed ? scoreTest(t.kind, t.answers) : null;
-    return [{ personId, kind: t.kind, answers: JSON.stringify(t.answers), result: JSON.stringify(result), completed }];
+    const clean = cleanTestAnswers(t.kind, t.answers);
+    const completed = Object.keys(clean).length >= TEST_META[t.kind].total;
+    const result = completed ? scoreTest(t.kind, clean) : null;
+    return [{ personId, kind: t.kind, answers: JSON.stringify(clean), result: JSON.stringify(result), completed }];
   });
   if (testRows.length) await db.testResult.createMany({ data: testRows });
 

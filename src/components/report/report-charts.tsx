@@ -44,7 +44,7 @@ export function BigFiveRadar({ data }: { data: NonNullable<PersonalityReport["bi
     <ResponsiveContainer width="100%" height={320}>
       <RadarChart
         data={data.map((d) => ({ trait: SHORT[d.trait] ?? d.title, value: d.value }))}
-        outerRadius="62%"
+        outerRadius="58%"
         margin={{ top: 10, right: 40, bottom: 10, left: 40 }}
       >
         <PolarGrid stroke="rgb(var(--foreground) / .12)" />
@@ -60,7 +60,7 @@ export function BigFiveRadar({ data }: { data: NonNullable<PersonalityReport["bi
 export function PrioritiesRadar({ data }: { data: PersonalityReport["priorities"] }) {
   return (
     <ResponsiveContainer width="100%" height={360}>
-      <RadarChart data={data} outerRadius="60%" margin={{ top: 10, right: 50, bottom: 10, left: 50 }}>
+      <RadarChart data={data} outerRadius="56%" margin={{ top: 10, right: 60, bottom: 10, left: 60 }}>
         <PolarGrid stroke="rgb(var(--foreground) / .12)" />
         <PolarAngleAxis dataKey="label" tick={{ ...tick, fontSize: 11 }} />
         <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
@@ -76,9 +76,10 @@ export function TemperamentPie({ scores }: { scores: Record<Temperament, number>
     .map((t) => ({ name: TEMPERAMENT_LABELS[t].title, value: scores[t], color: TEMPERAMENT_LABELS[t].color }))
     .filter((d) => d.value > 0);
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={3} stroke="none">
+    // Radii in % of the square box, so the ring never gets clipped in a narrow card column.
+    <ResponsiveContainer width="100%" aspect={1}>
+      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+        <Pie data={data} dataKey="value" nameKey="name" innerRadius="64%" outerRadius="98%" paddingAngle={3} stroke="none" isAnimationActive={false}>
           {data.map((d) => (
             <Cell key={d.name} fill={d.color} />
           ))}

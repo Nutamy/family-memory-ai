@@ -37,7 +37,7 @@ export function TagInput({ value, onChange, known }: { value: string[]; onChange
             } else if (e.key === "Backspace" && !draft && value.length) onChange(value.slice(0, -1));
           }}
           onBlur={() => draft && add(draft)}
-          placeholder={value.length ? "" : "Добавьте теги: Enter или запятая"}
+          placeholder={value.length ? "" : "Добавьте теги через запятую или клавишу ввода"}
           className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
         />
       </div>

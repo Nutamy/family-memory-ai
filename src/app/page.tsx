@@ -10,10 +10,10 @@ import { getSessionUserId } from "@/lib/auth";
 import { CHAPTERS } from "@/lib/questionnaire";
 
 const FEATURES = [
-  { icon: Mic, title: "Голос", text: "Запись в браузере, WAV и MP3, готовые для голосового клона ElevenLabs." },
+  { icon: Mic, title: "Голос", text: "Запись прямо в браузере. Файлы в высоком качестве — их хватит, чтобы воссоздать голос." },
   { icon: BookHeart, title: "Воспоминания", text: "Книга историй с тегами, местами, людьми и эмоциями." },
   { icon: Gem, title: "Ценности", text: "Развёрнутые ответы о счастье, любви, дружбе и выборе." },
-  { icon: Brain, title: "Психологический профиль", text: "Big Five, MBTI, темперамент и поведенческие сценарии." },
+  { icon: Brain, title: "Характер", text: "Черты характера, темперамент, тип личности и поведение в разных ситуациях." },
 ];
 
 export default async function HomePage() {
@@ -39,8 +39,8 @@ export default async function HomePage() {
 
       {/* Hero */}
       <section className="relative">
-        <Leaf className="absolute -left-6 top-6 w-20 -rotate-12 animate-float sm:left-6 sm:w-24" />
-        <Bird className="absolute right-2 top-0 w-24 animate-float [animation-delay:-3s] sm:right-16 sm:w-32" />
+        <Leaf className="absolute -left-8 top-2 w-14 -rotate-12 animate-float sm:left-6 sm:top-6 sm:w-24" />
+        <Bird className="absolute right-16 top-0 hidden w-32 animate-float [animation-delay:-3s] sm:block" />
         <Sprig className="absolute -left-10 bottom-0 hidden w-40 opacity-80 lg:block" />
         <Berries className="absolute -right-4 bottom-16 hidden w-20 lg:block" />
         <Sparkles className="absolute left-[18%] top-[55%] hidden w-16 opacity-80 md:block" />
@@ -49,7 +49,7 @@ export default async function HomePage() {
           <Reveal>
             <p className="eyebrow mb-5">Цифровой архив личности</p>
             <h1 className="mx-auto max-w-4xl text-5xl font-semibold leading-[1.05] sm:text-7xl">
-              Family Memory <span className="italic text-primary">AI</span>
+              Семейная <span className="italic text-primary">память</span>
             </h1>
           </Reveal>
           <Reveal delay={0.1}>
@@ -159,12 +159,13 @@ export default async function HomePage() {
                 </div>
               </Reveal>
             ))}
-            <Reveal delay={0.16}>
+            {/* Spans the free cells of the last row, so the grid ends without a gap. */}
+            <Reveal delay={0.16} className="lg:col-span-2">
               <div className="flex h-full flex-col justify-between rounded-3xl bg-primary p-6 text-white">
                 <SparklesIcon className="size-8" />
                 <div>
-                  <h3 className="mt-6 text-2xl font-semibold">Personality Report</h3>
-                  <p className="mt-2 text-white/85">Портрет личности, ценности, Big Five и карта приоритетов — в графиках.</p>
+                  <h3 className="mt-6 text-2xl font-semibold">Портрет личности</h3>
+                  <p className="mt-2 text-white/85">Характер, ценности, темперамент и жизненные приоритеты — в наглядных графиках.</p>
                 </div>
               </div>
             </Reveal>
@@ -190,9 +191,9 @@ export default async function HomePage() {
               </p>
               <ul className="mt-6 space-y-3 text-cream/85">
                 {[
-                  [AudioLines, "Подготовка датасета для ElevenLabs Voice Clone"],
-                  [Brain, "Персона для OpenAI или локальной LLM через Ollama"],
-                  [Download, "Экспорт ZIP всех записей и JSON со всеми ответами"],
+                  [AudioLines, "Записи, из которых можно воссоздать голос"],
+                  [Brain, "Основа для цифровой копии личности"],
+                  [Download, "Скачивание всех записей и ответов одним архивом"],
                 ].map(([Icon, text], i) => {
                   const I = Icon as typeof Mic;
                   return (
@@ -226,7 +227,7 @@ export default async function HomePage() {
 
       {/* Storage modes */}
       <section id="storage" className="relative py-20">
-        <div className="container max-w-5xl">
+        <div className="container">
           <Reveal>
             <p className="eyebrow">Ваши данные — ваш выбор</p>
             <h2 className="mt-3 max-w-2xl text-4xl font-semibold sm:text-5xl">Храните там, где вам спокойнее</h2>
@@ -246,7 +247,7 @@ export default async function HomePage() {
         <div className="container">
           <Reveal>
             <h2 className="mx-auto max-w-3xl text-4xl font-semibold sm:text-5xl">Начните с одного воспоминания</h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-xl text-balance text-lg text-muted-foreground">
               Отвечайте в своём темпе: по вопросу в день или целой главой за вечер.
             </p>
             <div className="mt-8 flex justify-center">
@@ -263,7 +264,7 @@ export default async function HomePage() {
       <footer className="border-t py-8">
         <div className="container flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
           <Logo compact />
-          <p>Без регистрации — только в вашем браузере. С аккаунтом — в защищённой базе.</p>
+          <p className="text-center">Без регистрации — только в вашем браузере. С аккаунтом — в защищённой базе.</p>
           <nav className="flex gap-4">
             <Link href="/privacy" className="hover:text-primary">
               Конфиденциальность

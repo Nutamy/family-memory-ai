@@ -88,7 +88,7 @@ export const MODULES: ModuleDef[] = [
   {
     slug: "tests",
     title: "Психологические тесты",
-    subtitle: "Big Five, MBTI и темперамент",
+    subtitle: "Большая пятёрка, тип личности и темперамент",
     icon: "brain",
     kind: "tests",
   },
